@@ -1,0 +1,22 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "location": "+/media/sunset.gif", 
+   "title": "Menu Background", 
+   "track-ref": "pp-menu-background", 
+   "type": "menu-background"
+  }, 
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "5", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 30 bold", 
+   "text": "First track of menu\n\n\n\n", 
+   "title": "Example Track of menu", 
+   "track-ref": "", 
+   "type": "message"
+  }
+ ]
+}

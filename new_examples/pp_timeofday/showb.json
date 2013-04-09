@@ -1,0 +1,38 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "5", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 30 bold", 
+   "text": "Show B\n\nPlays an audio track\nwhich is cut off by the end trigger", 
+   "title": "intro", 
+   "track-ref": "", 
+   "type": "message"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "audio-speaker": "", 
+   "audiospeaker": "", 
+   "background-image": "", 
+   "clear-screen": "no", 
+   "duration": "0", 
+   "location": "+/media/01.mp3", 
+   "mplayer-audio": "", 
+   "mplayer-other-options": "", 
+   "mplayer-volume": "", 
+   "title": "01.mp3", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "type": "audio"
+  }
+ ]
+}

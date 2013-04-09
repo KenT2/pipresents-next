@@ -1,0 +1,49 @@
+{
+ "issue": "1.2", 
+ "shows": [
+  {
+   "controlled-show": "", 
+   "show-ref": "start", 
+   "start-show": "mediashow", 
+   "title": "Start", 
+   "type": "start"
+  }, 
+  {
+   "audio-speaker": "stereo", 
+   "disable-controls": "no", 
+   "duration": "5", 
+   "has-child": "no", 
+   "hint-colour": "white", 
+   "hint-font": "Helvetica 30 bold", 
+   "hint-text": "", 
+   "hint-y": "100", 
+   "medialist": "media.json", 
+   "mplayer-audio": "hdmi", 
+   "mplayer-other-options": "", 
+   "mplayer-volume": "0", 
+   "next-input": "", 
+   "omx-audio": "hdmi", 
+   "omx-other-options": "", 
+   "omx-volume": "0", 
+   "omx-window": "", 
+   "progress": "auto", 
+   "repeat": "interval", 
+   "repeat-interval": "10", 
+   "sequence": "ordered", 
+   "show-ref": "mediashow", 
+   "show-text": "show text - same for every track", 
+   "show-text-colour": "red", 
+   "show-text-font": "arial 20 bold", 
+   "show-text-x": "1500", 
+   "show-text-y": "700", 
+   "title": "Mediashow", 
+   "transition": "cut", 
+   "trigger": "start", 
+   "trigger-end": "none", 
+   "trigger-end-time": "", 
+   "trigger-input": "", 
+   "trigger-next": "none", 
+   "type": "mediashow"
+  }
+ ]
+}

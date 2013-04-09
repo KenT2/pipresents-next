@@ -1,0 +1,49 @@
+{
+ "issue": "1.2", 
+ "shows": [
+  {
+   "controlled-show": "", 
+   "show-ref": "start", 
+   "start-show": "mymediashow", 
+   "title": "Start", 
+   "type": "start"
+  }, 
+  {
+   "audio-speaker": "stereo", 
+   "disable-controls": "no", 
+   "duration": "5", 
+   "has-child": "no", 
+   "hint-colour": "", 
+   "hint-font": "", 
+   "hint-text": "", 
+   "hint-y": "", 
+   "medialist": "media.json", 
+   "mplayer-audio": "hdmi", 
+   "mplayer-other-options": "", 
+   "mplayer-volume": "0", 
+   "next-input": "", 
+   "omx-audio": "hdmi", 
+   "omx-other-options": "", 
+   "omx-volume": "0", 
+   "omx-window": "", 
+   "progress": "auto", 
+   "repeat": "interval", 
+   "repeat-interval": "8", 
+   "sequence": "ordered", 
+   "show-ref": "mymediashow", 
+   "show-text": "", 
+   "show-text-colour": "", 
+   "show-text-font": "", 
+   "show-text-x": "0", 
+   "show-text-y": "0", 
+   "title": "Mediashow", 
+   "transition": "cut", 
+   "trigger": "start", 
+   "trigger-end": "none", 
+   "trigger-end-time": "", 
+   "trigger-input": "", 
+   "trigger-next": "none", 
+   "type": "mediashow"
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "0", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 20 bold", 
+   "text": "Welcome to Pi Presents\n\nThe command line options specified a profile that does not exist", 
+   "title": "Hello World", 
+   "track-ref": "", 
+   "type": "message"
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "background-colour": "blue", 
+   "background-image": "", 
+   "duration": "10", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 25 bold", 
+   "text": "Two repeating mediashows playing simultaneously\n\nThe audio show has its controls disabled", 
+   "title": "Intro", 
+   "track-ref": "", 
+   "type": "message"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "duration": "", 
+   "location": "+/media/sarename.gif", 
+   "title": "sarename.gif", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "transition": "cut", 
+   "type": "image"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "duration": "", 
+   "location": "+/media/sunset.gif", 
+   "title": "sunset.gif", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "transition": "cut", 
+   "type": "image"
+  }
+ ]
+}

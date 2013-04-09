@@ -1,0 +1,91 @@
+Version 1.2.1 beta 1 8/4/2013
+
+
+Major improvements:
+
+AUDIO PLAYER
+New audioplayer which will play audio tracks without affecting the display, uses MPlayer
+Audio tracks can be sent to left or right speakers or stereo.
+Audio tracks can have associate images and text.
+Volume of a track can be set.
+
+ANIMATION and GPIO
+New animation subsystem, turn GPIO on or off synchronised with tracks
+GPIO is now fully configurable, assign pins to buttons, trigger inputs or animation outputs
+
+TIME OF DAY TRIGGERS
+Time of day triggers for liveshow and mediashow, start a show at a time of day, end a show after a period of time or at a time of day.
+When waiting for time of day can display the time of the next show.
+
+CONCURRENCY
+Can now play two or more shows simultaneously
+Control keys and buttons can be disable for chosen shows.
+
+MESSAGES
+Messages can now have background images or text.
+
+FULL SCREEN
+Simplified setup and use of fullscreen - thanks tjaehnel
+
+SHUFFLE
+Tracks in mediashow and liveshow can now be shuffled
+
+VIDEOPLAYER
+Provision in the editor for seamless looping (waiting for omxplayer to be upgraded)
+Provision in editor for windowed videos (waiting for omxplayer to be upgraded)
+Added .m4v to video types
+Volume of a track can now be set
+
+MEDIASHOW
+Enhanced triggering - moving to the next track can now be triggered by GPIO
+
+BUG FIXES
+As version 1.1.2b
+Improved implementation of possible fix for playing of videos crashing once in every few hours
+
+version 1.1.2b - 7/4/2013
+Fixed messages not being vertically centered in messageplayer
+Fixed duration of displayed messages increasing, as well as increasing CPU occupancy with time
+Possible  fix for playing of videos crashing once in every few hours
+
+version 1.1.2a - 19/2/2013
+Fixed sorting of files in liveshow
+
+version 1.1.2 - 12/2/2013
+Liveshow can now take its tracks from two directories
+Switched 'up' and 'down' cursor keys in mediashow to match other programs.
+Corrected response to buttons especially in complex shows
+in show error handling now exits cleanly.
+Examples always use hdmi for audio
+
+version 1.1.1b - 31/1/2013
+Workaround for editor not reliably saving medialists when used on a Windows PC
+
+version 1.1.1a - 28/1/2013
+Fixed bug in Track> Add Dir
+!!!! Editor does not reliably save medialists when used on a Windows PC !!!!!
+
+Version 1.1.1 - 28/1/2013
+Added a LiveShow capability, tracks can be dynamically uploaded using ftp while a show is running.
+Editor now works on a PC.
+Added resources.cfg that allows the administrative text that was displayed to customers to be modified.
+Removed the -c command line argument as Pi Presents automatically detects where its code is.
+Removed mouse pointer in fullscreen mode, requires unclutter to be installed (Thanks Azizar)
+Added .wav and .ogg to audio files as they can be played by omxplayer.
+
+
+Version 1.1.0 - 20/1/2013
+Added validation of profiles - all fields except for fonts and colours are validated.
+Added a system to check compatibiity between profiles, editor and Pi Presents. Uses first 2 digits of Version:
+   First digit - complete re-write.
+   Second digit - Incremented when profile definition has changed
+   Third digit - modifications that do not change the profile interface.
+Images can now display a text overlay - show-text and track-text
+Images can  be paused using 'space', 'p' or spacebar
+Reversed the polarity of PIR input as burglar alarm PIR's have nc connections.
+New image and message tracks now have blank durations so they inherit from show by default.
+Fixed bug in editor where add show and add track produced linked tracks.
+Other minor improvements
+
+Version 1.0 - 8/1/2013
+First Issue

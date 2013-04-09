@@ -1,0 +1,44 @@
+{
+ "issue": "1.2", 
+ "shows": [
+  {
+   "controlled-show": "", 
+   "show-ref": "start", 
+   "start-show": "liveshow", 
+   "title": "Start", 
+   "type": "start"
+  }, 
+  {
+   "audio-speaker": "stereo", 
+   "disable-controls": "no", 
+   "duration": "5", 
+   "has-child": "no", 
+   "hint-colour": "white", 
+   "hint-font": "Helvetica 30 bold", 
+   "hint-text": "Press Return", 
+   "hint-y": "100", 
+   "medialist": "liveshow.json", 
+   "mplayer-audio": "hdmi", 
+   "mplayer-other-options": "", 
+   "mplayer-volume": "0", 
+   "omx-audio": "hdmi", 
+   "omx-loop": "no", 
+   "omx-other-options": "", 
+   "omx-volume": "0", 
+   "omx-window": "", 
+   "show-ref": "liveshow", 
+   "show-text": "", 
+   "show-text-colour": "", 
+   "show-text-font": "", 
+   "show-text-x": "0", 
+   "show-text-y": "0", 
+   "title": "Liveshow", 
+   "transition": "cut", 
+   "trigger-end": "none", 
+   "trigger-end-time": "", 
+   "trigger-start": "start", 
+   "trigger-start-time": "", 
+   "type": "liveshow"
+  }
+ ]
+}

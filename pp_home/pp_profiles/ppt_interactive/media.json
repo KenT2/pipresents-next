@@ -1,0 +1,22 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "sub-show": "mymenu", 
+   "title": "Child Menu", 
+   "track-ref": "pp-child-show", 
+   "type": "show"
+  }, 
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "20", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 30 bold", 
+   "text": "First track of ppt_interactive\n\n", 
+   "title": "Example Track", 
+   "track-ref": "", 
+   "type": "message"
+  }
+ ]
+}

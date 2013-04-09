@@ -1,0 +1,30 @@
+Version 1.2.1 beta 1
+
+MPlayer must now be installed before using Pi Presents - sudo apt-get install mplayer
+
+This version has many new fields so the version number has increased from 1.1 to 1.2
+* This version of Pi Presents will not run shows prepared under previous versions of pp_editor
+* Using the editor on a previous version of a profile will automatically upgrade the profile to the current version HOWEVER SEE BELOW!!!
+* There is one change you might have to do manually. If you used PIR as the trigger for a mediashow change the 'Start Trigger' field to GPIO and enter PIR into the 'trigger input' field.
+
+There is a simplified way to do fullscreen so the --fullscreen (-f) command option now has no parameters. Also there is no need to edit the lxde-rc.xml file or change the taskbar to autohide. However if lxde-rc.xml is already edited just leave it it will not affect operation.
+
+The Version 1.1.x examples use omxplayer to play audio tracks. MPlayer can now be used. To do this in this beta you will need to delete the track and re-create it.
+
+In version 1.1.x at the end of a mediashow the screen went blank, this does not happen in version 1.2.1 as, in order to reduce the flicker between tracks I leave the previous track on display while displaying the next. You will need to add a 1 second blank message track if you want a blank screen. 
+
+This and future versions can potentially blow up your Pi as it controls the digital outputs. Until you are familiar with it I suggest ensuring all GPIO pins are disconnected when using Pi Presents.
+
+Take care when modifying gpio.cfg,  little error checking is done by Pi Presents
+
+Enjoy, feedback welcome.
+
+
+Version 1.1.2
+On a Windows PC the editor did not reliably save medialists. I have added a workaround which asks the user to re-try  the save it seems to always work on the second or third time.
+
+unclutter must be installed before using Pi Presents  (sudo apt-get install unclutter)
+
+In my tests liveshow coped well with deleting tracks at any time. However I can see there are potential problems as files could be deleted at the moment they are being read. If you have problems please report them and I will improve the mutual exclusion.
+
+Take care when modifying resources.cfg, little error checking is done by Pi Presents.

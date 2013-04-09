@@ -1,0 +1,16 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "5", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 30 bold", 
+   "text": "First track of ppt_exhibit\n\n", 
+   "title": "Example Track", 
+   "track-ref": "", 
+   "type": "message"
+  }
+ ]
+}
