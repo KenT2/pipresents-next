@@ -248,6 +248,7 @@ class ImagePlayer:
         else:
             self.porch_counter=self.porch_counter+1
             # print "doing slide front porch " +str(self.porch_counter)
+            self.canvas.config(bg='black')
             self._display_image()
             if self.porch_counter==self.porch/self.tick:
                 self._start_dwell()

@@ -135,7 +135,8 @@ class OMXDriver(object):
                                             pexpect.EOF,
                                             OMXDriver._DONE_REXP])
             if index == 1:
-                continue
+                print 'timeout'
+                pass
             elif index in (2, 3):
                 #Have a nice day detected
                 self.end_play_signal=True

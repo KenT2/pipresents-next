@@ -125,9 +125,6 @@ class MessagePlayer:
             self.canvas.after_cancel(self._tick_timer)
             self._tick_timer=None
         self.quit_signal=False
-        self.canvas.config(bg='black')
-        #self.canvas.delete(ALL)
-        self.canvas.update_idletasks( )
         if self.error==True or reason=='error':
             self.end_callback("error",message)
             self=None  

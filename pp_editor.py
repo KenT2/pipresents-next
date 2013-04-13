@@ -1019,16 +1019,16 @@ class EditItemDialog(tkSimpleDialog.Dialog):
                     bg='white'
                 Label(master,text=field['text'], anchor=W).grid(row=row,column=0,sticky=W)
                 if field['shape']=="entry":
-                    obj=Entry(master,bg=bg,width=26)
+                    obj=Entry(master,bg=bg,width=40,font='arial 10')
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']in("text",'csv'):
-                    obj=Text(master,bg=bg,height=4,width=20)
+                    obj=Text(master,bg=bg,height=4,width=40,font='arial 10')
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']=='spinbox':
                     obj=Spinbox(master,bg=bg,values=values,wrap=True)
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']=="browse":
-                    obj=Entry(master,bg=bg,width=26)
+                    obj=Entry(master,bg=bg,width=40)
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']=='option-menu': 
                     self.option_val = StringVar(master)    
