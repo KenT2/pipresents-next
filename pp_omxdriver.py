@@ -105,15 +105,10 @@ class OMXDriver(object):
         self.mon.log(self, "Send command to omxplayer: "+ cmd)
         self._process = pexpect.spawn(cmd)
 
-        # print "**************************************************************"
-        while not self._process.isalive():
-            print 'not awake'
-            sleep(0.05)
-        
         # uncomment to monitor output to and input from omxplayer.bin (read pexpect manual)
-        # fout= file('omxlogfile.txt','w')  #uncomment and change sys.stdout to fout to log to a file
+        fout= file('omxlogfile.txt','w')  #uncomment and change sys.stdout to fout to log to a file
         # self._process.logfile_send = sys.stdout  # send just commands to stdout
-        # self._process.logfile=fout  # send all communications to log file
+        self._process.logfile=fout  # send all communications to log file
 
         if pause_before_play:
             self._process.send('p')
@@ -135,8 +130,7 @@ class OMXDriver(object):
                                             pexpect.EOF,
                                             OMXDriver._DONE_REXP])
             if index == 1:
-                print 'timeout'
-                pass
+                continue
             elif index in (2, 3):
                 #Have a nice day detected
                 self.end_play_signal=True

@@ -100,7 +100,7 @@ class PPdefinitions:
                     'show-text-colour':{'param':'show-text-colour','shape':'entry','text':'Show Text Colour','must':'no','read-only':'no'},
                     'show-text-x':{'param':'show-text-x','shape':'entry','text':'Show Text x Position','must':'no','read-only':'no'},
                     'show-text-y':{'param':'show-text-y','shape':'entry','text':'Show Text y Position','must':'no','read-only':'no'},
-                    'start-show':{'param':'start-show','shape':'entry','text':'First Shows','must':'no','read-only':'no'},
+                    'start-show':{'param':'start-show','shape':'entry','text':'Start Shows','must':'no','read-only':'no'},
                     'text':{'param':'text','shape':'text','text':'Message Text','must':'no','read-only':'no'},
                     'timeout':{'param':'timeout','shape':'entry','text':'Timeout (secs)','must':'no','read-only':'no'},
                     'title':{'param':'title','shape':'entry','text':'Title','must':'no','read-only':'no'},

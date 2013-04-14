@@ -174,15 +174,10 @@ class VideoPlayer:
 
     # called to end omxdriver
     def _end(self):
-            # delay as workaround for occasional crash when two videos are played back to back
             os.system("xrefresh -display :0")
             if self._tick_timer<>None:
                 self.canvas.after_cancel(self._tick_timer)
                 self._tick_timer=None
-            self.canvas.after(250,self._end_after)
-            
-    def _end_after(self)
-
             if self.error==True:
                 self.end_callback("error",'error')
                 self=None 
@@ -248,6 +243,7 @@ class VideoPlayer:
                 # callback to the calling object to e.g remove egg timer.
                 if self.ready_callback<>None:
                     self.ready_callback()
+                self.canvas.config(bg='black')
                 self.canvas.delete(ALL)
                 self.display_image()
                 self.play_state=VideoPlayer._PLAYING
@@ -313,7 +309,6 @@ class VideoPlayer:
         else:
             self.mon.log(self,"!<stop rejected")
             return False
-            
 # *****************
 # image and text
 # *****************
