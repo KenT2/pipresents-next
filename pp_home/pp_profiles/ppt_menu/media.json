@@ -13,6 +13,7 @@
    "duration": "5", 
    "message-colour": "white", 
    "message-font": "Helvetica 30 bold", 
+   "message-justify": "left", 
    "text": "First Track of ppt_menu\n", 
    "title": "Example Track", 
    "track-ref": "", 

@@ -13,6 +13,7 @@
    "duration": "5", 
    "message-colour": "white", 
    "message-font": "Helvetica 30 bold", 
+   "message-justify": "left", 
    "text": "First track of menu\n\n\n\n", 
    "title": "Example Track of menu", 
    "track-ref": "", 
