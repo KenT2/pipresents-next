@@ -1,6 +1,17 @@
+1.2.1c 27/4/2013
+PLEASE READ RELEASE NOTES
+new - messageplayer now has a justify field to justify the text.
+new - in the editor use tools>update all to update all profiles in pp_home
+new - new editor command line option --forceupdate to force updating a profile if editor and profile versions are the same (useful for beta testers).
+enhancement - increase number of lines and font size in the editor's text field
+enhancement - add .wma to audio types
+
+fixed - shutdown using a button now works again
+fixed - playing an audio track does not reset backgound colour to black
+
+
+
 Version 1.2.1 beta 1 8/4/2013
-
-
 Major improvements:
 
 AUDIO PLAYER

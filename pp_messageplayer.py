@@ -165,7 +165,8 @@ class MessagePlayer:
         self.canvas.create_text(int(self.canvas['width'])/2, int(self.canvas['height'])/2,
                                                 text=self.text.rstrip('\n'),
                                                 fill=self.track_params['message-colour'],
-                                                font=self.track_params['message-font'])     
+                                                font=self.track_params['message-font'],
+                                                justify=self.track_params['message-justify'])     
         
         # display instructions (hint)
         if self.enable_menu==True:

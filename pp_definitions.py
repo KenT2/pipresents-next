@@ -2,8 +2,7 @@ class PPdefinitions:
 
     IMAGE_FILES=('Image files', '.gif','.jpg','.jpeg','.bmp','.png','.tif')
     VIDEO_FILES=('Video files','.mp4','.mkv','.avi','.mp2','.wmv','.m4v')
-    AUDIO_FILES=('Audio files','.mp3','.wav','.ogg')
-
+    AUDIO_FILES=('Audio files','.mp3','.wav','.ogg','.wma')
     
     show_types={
     
@@ -73,8 +72,6 @@ class PPdefinitions:
                     'menu-x':{'param':'menu-x','shape':'entry','text':'Menu x Position','must':'no','read-only':'no'},
                     'menu-y':{'param':'menu-y','shape':'entry','text':'Menu y Position','must':'no','read-only':'no'},
                     'menu-spacing':{'param':'menu-spacing','shape':'entry','text':'Entry Spacing','must':'no','read-only':'no'},
-                    'message-font':{'param':'message-font','shape':'entry','text':'Text Font','must':'yes','read-only':'no'},
-                    'message-colour':{'param':'message-colour','shape':'entry','text':'Text Colour','must':'yes','read-only':'no'},
                     'mplayer-audio':{'param':'mplayer-audio','shape':'option-menu','text':'MPlayer Audio','must':'no','read-only':'no',
                                        'values':['hdmi','local']},
                     'mplayer-other-options':{'param':'mplayer-other-options','shape':'entry','text':'Other MPlayer Options','must':'no','read-only':'no'},
@@ -121,7 +118,7 @@ class PPdefinitions:
     new_tracks={
                 'video':{'title':'New Video','track-ref':'','type':'video','location':'','omx-audio':'','omx-volume':'','omx-window':'','omx-loop':'no','track-text':'','track-text-font':'',
                        'track-text-colour':'','track-text-x':'0','track-text-y':'0','animate-begin':'','animate-clear':'no','animate-end':''},
-                'message':{'title':'New Message','track-ref':'','type':'message','text':'','duration':'5','message-font':'Helvetica 30 bold','message-colour':'white','background-colour':'','background-image':''},
+                'message':{'title':'New Message','track-ref':'','type':'message','text':'','duration':'5','message-font':'Helvetica 30 bold','message-colour':'white','message-justify':'left','background-colour':'','background-image':''},
                 'show':{'title':'New Show','track-ref':'','type':'show','sub-show':''},
                 'image':{'title':'New Image','track-ref':'','type':'image','location':'','duration':'','transition':'','track-text':'','track-text-font':'',
                        'track-text-colour':'','track-text-x':'0','track-text-y':'0','animate-begin':'','animate-clear':'no','animate-end':''},
@@ -133,7 +130,7 @@ class PPdefinitions:
                          }
 
     track_types={'video':['type','title','track-ref','location','omx-audio','omx-volume','omx-window','omx-loop','track-text','track-text-font','track-text-colour','track-text-x','track-text-y','animate-begin','animate-clear','animate-end'],
-                'message':['type','title','track-ref','text','duration','message-font','message-colour','background-colour','background-image'],
+                'message':['type','title','track-ref','text','duration','message-font','message-colour','message-justify','background-colour','background-image'],
                 'show':['type','title','track-ref','sub-show'],
                 'image':['type','title','track-ref','location','duration','transition','track-text','track-text-font','track-text-colour',
                        'track-text-x','track-text-y','animate-begin','animate-clear','animate-end'],
@@ -155,6 +152,8 @@ class PPdefinitions:
                                        'values':['yes','no']},
                             'duration':{'param':'duration','shape':'entry','text':'Duration (secs)','must':'no','read-only':'no'},
                             'location':{'param':'location','shape':'browse','text':'Location','must':'no','read-only':'no'},
+                            'message-justify':{'param':'message-justify','shape':'option-menu','text':'Justification','must':'no','read-only':'no',
+                                       'values':['left','center','right']},
                             'message-font':{'param':'message-font','shape':'entry','text':'Text Font','must':'no','read-only':'no'},
                             'message-colour':{'param':'message-colour','shape':'entry','text':'Text Colour','must':'no','read-only':'no'},
                             'mplayer-audio':{'param':'mplayer-audio','shape':'option-menu','text':'MPlayer Audio','must':'no','read-only':'no',

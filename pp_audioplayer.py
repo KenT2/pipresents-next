@@ -424,8 +424,9 @@ class AudioPlayer:
 # *****************
             
     def display_image(self):
-        self.canvas.config(bg='black')
+
         if self.background_file<>'' or self.show_params['show-text']<> '' or self.track_params['track-text']<> '' or self.enable_menu== True or self.track_params['clear-screen']=='yes':
+            self.canvas.config(bg='black')
             self.canvas.delete(ALL)
         if self.background_file<>'':
             self.background_img_file = self.complete_path(self.background_file)

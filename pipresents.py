@@ -29,6 +29,7 @@ from pp_validate import Validator
 from pp_resourcereader import ResourceReader
 from pp_timeofday import TimeOfDay
 
+
 class PiPresents:
 
     # Constants for list of start shows
@@ -319,7 +320,7 @@ class PiPresents:
         self.root.after(5000,self.on_shutdown_delay)
 
     def on_shutdown_delay(self):
-        if self.ppio.is_pressed(self.PPIO.SHUTDOWN):
+        if self.ppio.is_pressed('shutdown'):
             self.shutdown_required=True
             self.on_break_key()
 

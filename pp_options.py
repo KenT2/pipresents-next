@@ -34,5 +34,8 @@ def ed_options():
     parser.add_argument( '-d','--debug', 
                                           action='store_true',
                                           help='Debug output to terminal window')
+    parser.add_argument( '--forceupdate', 
+                                          action='store_true',
+                                          help='Force Update')
     args=parser.parse_args()
     return  vars(args)

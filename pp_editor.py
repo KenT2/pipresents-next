@@ -138,6 +138,9 @@ class PPEditor:
         typemenu.add_command(label='Child Show', command = self.new_child_show_track) 
         trackmenu.add_cascade(label='New', menu = typemenu)
 
+        toolsmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        menubar.add_cascade(label='Tools', menu = toolsmenu)
+        toolsmenu.add_command(label='Update All', command = self.update_all)
         
         optionsmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         menubar.add_cascade(label='Options', menu = optionsmenu)
@@ -375,8 +378,37 @@ class PPEditor:
         profile = self.pp_dir+"/pp_home/pp_profiles/ppt_liveshow"
         self.new_profile(profile)
 
+# *********************************************
+# update profile
+# **********************************************
+
+    def update_all(self):
+        self.init()
+        for profile_file in os.listdir(self.pp_home_dir+os.sep+'pp_profiles'):
+            # self.mon.log (self,"Updating "+profile_file)
+            self.pp_profile_dir = self.pp_home_dir+os.sep+'pp_profiles'+ os.sep + profile_file
+            if not os.path.exists(self.pp_profile_dir+os.sep+"pp_showlist.json"):
+                tkMessageBox.showwarning("Pi Presents","Not a profile, skipping "+self.pp_profile_dir)
+            else:
+                self.current_showlist=ShowList()
+                #self.mon.log (self,"Checking version "+profile_file)
+                self.current_showlist.open_json(self.pp_profile_dir+os.sep+"pp_showlist.json")
+                if float(self.current_showlist.sissue())<float(self.editor_issue):
+                    self.update_profile()
+                    self.mon.log(self,"Version of profile "+profile_file+ " has been updated to "+self.editor_issue)
+                elif (self.command_options['forceupdate'] == True and float(self.current_showlist.sissue())==float(self.editor_issue)):
+                    self.update_profile()
+                    self.mon.log(self, "Forced update of " + profile_file + ' to '+self.editor_issue)
+                elif float(self.current_showlist.sissue())>float(self.editor_issue):
+                    tkMessageBox.showwarning("Pi Presents", "Version of profile " +profile_file+ " is greater than editor, skipping")
+                else:
+                    self.mon.log(self," Profile " + profile_file + " Already up to date ")
+        self.init()
+        tkMessageBox.showwarning("Pi Presents","All profiles updated")
+            
     def update_profile(self):
-         #open showlist and update its shows
+        #open showlist and update its shows
+        # self.mon.log (self,"Updating show ")
         ifile  = open(self.pp_profile_dir + os.sep + "pp_showlist.json", 'rb')
         shows = json.load(ifile)['shows']
         ifile.close()
@@ -389,6 +421,7 @@ class PPEditor:
         # UPDATE MEDIALISTS AND THEIR TRACKS
         for file in os.listdir(self.pp_profile_dir):
             if file.endswith(".json") and file<>'pp_showlist.json':
+                # self.mon.log (self,"Updating medialist " + file)
                 #open a medialist and update its tracks
                 ifile  = open(self.pp_profile_dir + os.sep + file, 'rb')
                 tracks = json.load(ifile)['tracks']
@@ -403,20 +436,19 @@ class PPEditor:
         # get correct spec from type of field
         replacement_tracks=[]
         for old_track in old_tracks:
+            #print '\nold track ',old_track
             track_type=old_track['type']
             spec_fields=PPdefinitions.new_tracks[track_type]
+            left_overs=dict()
             # go through track and delete fields not in spec
-            while True:
-                to_delete=""
-                for track_field in old_track:
-                    if track_field not in spec_fields:
-                        to_delete=track_field
-                if to_delete<>"":
-                    del old_track[to_delete]
-                else:
-                    break
+            for key in old_track.keys():
+                if key in spec_fields:
+                        left_overs[key]=old_track[key]
+            #print '\n leftovers',left_overs
             replacement_track=copy.deepcopy(PPdefinitions.new_tracks[track_type])
-            replacement_track.update(old_track)
+            #print '\n before update', replacement_track
+            replacement_track.update(left_overs)
+            #print '\nafter update',replacement_track
             replacement_tracks.append(copy.deepcopy(replacement_track))
         return replacement_tracks
 
@@ -427,18 +459,14 @@ class PPEditor:
         for old_show in old_shows:
             show_type=old_show['type']
             spec_fields=PPdefinitions.new_shows[show_type]
-            # go through show and delete fields not in spec
-            while True:
-                to_delete=""
-                for show_field in old_show:
-                    if show_field not in spec_fields:
-                        to_delete=show_field
-                if to_delete<>"":
-                    del old_show[to_delete]
-                else:
-                    break
+            left_overs=dict()
+            # go through track and delete fields not in spec
+            for key in old_show.keys():
+                if key in spec_fields:
+                        left_overs[key]=old_show[key]
+            # print '\n leftovers',left_overs
             replacement_show=copy.deepcopy(PPdefinitions.new_shows[show_type])
-            replacement_show.update(old_show)
+            replacement_show.update(left_overs)
             replacement_shows.append(copy.deepcopy(replacement_show))
         return replacement_shows                
             
@@ -453,7 +481,7 @@ class PPEditor:
             self.app_exit()
         self.current_showlist=ShowList()
         self.current_showlist.open_json(showlist_file)
-        if float(self.current_showlist.sissue())<float(self.editor_issue):
+        if float(self.current_showlist.sissue())<float(self.editor_issue) or  (self.command_options['forceupdate'] == True and float(self.current_showlist.sissue())==float(self.editor_issue)):
             self.update_profile()
             self.mon.err(self,"Version of profile has been updated to "+self.editor_issue+", please re-open")
             return False
@@ -673,12 +701,12 @@ class PPEditor:
         
     def new_track(self,fields,values):
         if self.current_medialist<>None:
-            print '\nfields ', fields
-            print '\nvalues ', values
+            #print '\nfields ', fields
+            #print '\nvalues ', values
             new_track=copy.deepcopy(fields)
-            print ',\new track ',new_track
+            #print ',\new track ',new_track
             self.current_medialist.append(new_track)
-            print '\nbefore values ',self.current_medialist.print_list()
+            #print '\nbefore values ',self.current_medialist.print_list()
             if values<>None:
                 self.current_medialist.update(self.current_medialist.length()-1,values)
             self.current_medialist.select(self.current_medialist.length()-1)
@@ -1019,10 +1047,10 @@ class EditItemDialog(tkSimpleDialog.Dialog):
                     bg='white'
                 Label(master,text=field['text'], anchor=W).grid(row=row,column=0,sticky=W)
                 if field['shape']=="entry":
-                    obj=Entry(master,bg=bg,width=40,font='arial 10')
+                    obj=Entry(master,bg=bg,width=40,font='arial 11')
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']in("text",'csv'):
-                    obj=Text(master,bg=bg,height=4,width=40,font='arial 10')
+                    obj=Text(master,bg=bg,height=8,width=40,font='arial 11')
                     obj.insert(END,self.tp[field['param']])
                 elif field['shape']=='spinbox':
                     obj=Spinbox(master,bg=bg,values=values,wrap=True)
@@ -1067,10 +1095,11 @@ class EditItemDialog(tkSimpleDialog.Dialog):
  
     def parse_animate(self,text):
         lines  = int(text.index('end').split('.')[0]) - 1  # returns line count
-        print lines
+        #print lines
         for line in range(lines):
-            print self.text_eol(line)
-            print "text", text.get(self.text_index(line,0),self.text_eol(line))
+            pass
+            #print self.text_eol(line)
+            #print "text", text.get(self.text_index(line,0),self.text_eol(line))
         return
         
     def text_index(self,line,column):

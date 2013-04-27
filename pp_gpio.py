@@ -170,8 +170,11 @@ class PPIO:
             pin[PPIO.PRESSED]==False
             pin[PPIO.LAST]==False
 
-    # index is of the pins array, provided by the callback ***** needs to be name
+    # name is the symbolic name.
     def is_pressed(self,name):
+        for index, pin in enumerate(PPIO.pins):
+            if name == pin[PPIO.NAME]:
+                break
         return PPIO.pins[index][PPIO.PRESSED]
 
     def do_buttons(self):

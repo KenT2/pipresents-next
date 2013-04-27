@@ -1,5 +1,10 @@
-Version 1.2.1 beta 1
+Version 1.2.1c (beta)
 
+There has been a change of profile since 1.2.1 I have added 'message-justify' to messages. Hoowever I have not changed the profile version number since this is a beta. You must however update the profiles; to do this run the editor with the --forceupdate command line option.
+
+To ease the updating task there is a now editor menu option 'tools>update'  which will update all profiles in a pp_home.
+
+Version 1.2.1
 MPlayer must now be installed before using Pi Presents - sudo apt-get install mplayer
 
 This version has many new fields so the version number has increased from 1.1 to 1.2

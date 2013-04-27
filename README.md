@@ -152,5 +152,7 @@ Bug Reports and Feature Requests
 ================================
 I am keen to develop Pi Presents further and would welcome bug reports and ideas for real world additional features and uses. 
 
-Please use the Issues tab on Github https://github.com/KenT2/pipresents-next/issues or the Pi Presents thread http://www.raspberrypi.org/phpBB3/viewtopic.php?f=38&t=29397 on the Raspberry Pi forum. ?????????
+Please use the Issues tab on Github https://github.com/KenT2/pipresents-next/issues or the Pi Presents thread  http://www.raspberrypi.org/phpBB3/viewtopic.php?f=38&t=39985 on the Raspberry Pi forum.
+
+For more information on how Pi Presents is being used, Hints and Tips on how to use it and all the latest news hop over to the Pi Presents website http://pipresents.wordpress.com/
 
