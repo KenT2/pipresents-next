@@ -26,18 +26,13 @@ from pp_mediashow import MediaShow
 from pp_utils import Monitor
 from pp_utils import StopWatch
 from pp_validate import Validator
+from pp_showmanager import ShowManager
 from pp_resourcereader import ResourceReader
 from pp_timeofday import TimeOfDay
 
 
 class PiPresents:
 
-    # Constants for list of start shows
-    SHOW_TEMPLATE=['',None,-1]
-    NAME = 0   # text name of the show
-    SHOW = 1   # the show object
-    ID = 2    # Numeic identity of the show object, sent to the instance and returned in callbacks
-    
     def __init__(self):
         
         self.pipresents_issue="1.2"
@@ -257,9 +252,10 @@ class PiPresents:
         self.tod.poll()
 
         # Create list of start shows initialise them and then run them
-        self.start_shows = self.create_start_show_list()
-        self.init_shows()
-        self.run_shows()
+
+        self.show_manager=ShowManager()
+        self.show_manager.init()
+        self.run_start_shows()
         self.root.mainloop( )
 
 
@@ -272,13 +268,13 @@ class PiPresents:
     # kill or error
     def terminate(self,reason):
         needs_termination=False
-        for start_show in self.start_shows:
-            if start_show[PiPresents.SHOW]<>None:
+        for show in self.show_manager.shows:
+            if show[ShowManager.SHOW_OBJ]<>None:
                 needs_termination=True
-                self.mon.log(self,"Sent terminate to show "+ start_show[PiPresents.NAME])
-                start_show[PiPresents.SHOW].terminate(reason)
+                self.mon.log(self,"Sent terminate to show "+ show[ShowManager.SHOW_REF])
+                show[ShowManager.SHOW_OBJ].terminate(reason)
         if needs_termination==False:
-            self._end(reason)
+            self._end(reason,'terminate - no termination of lower levels required')
 
 
 
@@ -343,10 +339,11 @@ class PiPresents:
         
 
     def _key_pressed(self,key_name):
-        # key pressses are sent only to the controlled show.
         self.mon.log(self, "Key Pressed: "+ key_name)
-        for start_show in self.start_shows:
-                start_show[PiPresents.SHOW].key_pressed(key_name)          
+        for show in self.show_manager.shows:
+                show_obj=show[ShowManager.SHOW_OBJ]
+                if show_obj<>None:
+                    show_obj.key_pressed(key_name)          
 
 
          
@@ -361,32 +358,20 @@ class PiPresents:
         self.on_break_key()
 
 # *********************
-# Start show creation and running and return from
+# SHOW RUNNING
 # ********************   
         
 # Extract shows from start show
-    def create_start_show_list(self):
+    def run_start_shows(self):
         start_shows_text=self.starter_show['start-show']
-        shows=[]
-        index=0
         fields= start_shows_text.split()
-        for field in fields:
-            show = PiPresents.SHOW_TEMPLATE        
-            show[PiPresents.NAME]=field
-            show[PiPresents.ID]=index 
-            shows.append(copy.deepcopy(show))
-            index+=1          
-        return shows
-
-    def init_shows(self):
-        # build  list of shows to run by instantiating their classes.
-        for start_show in self.start_shows:
-            index = self.showlist.index_of_show(start_show[PiPresents.NAME])
-            if index >=0:
-                self.showlist.select(index)
+        for field in fields:       
+            show_index = self.showlist.index_of_show(field)
+            if show_index >=0:
+                self.showlist.select(show_index)
                 show=self.showlist.selected_show()
             else:
-                self.mon.err(self,"Show not found in showlist: "+ start_show[PiPresents.NAME])
+                self.mon.err(self,"Show not found in showlist: "+ field)
                 self._end('error','show not found in showlist')
                 
             if show['type']=="mediashow":
@@ -395,18 +380,20 @@ class PiPresents:
                                                                 self.showlist,
                                                                 self.pp_home,
                                                                 self.pp_profile)
-                start_show[PiPresents.SHOW]=show_obj
-
-
-                
+                showmanager_index=self.show_manager.register_show(field)
+                self.show_manager.set_running(showmanager_index,show_obj)
+                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
+ 
+             
             elif show['type']=="menu":
                 show_obj = MenuShow(show,
                                                         self.canvas,
                                                         self.showlist,
                                                         self.pp_home,
                                                         self.pp_profile)
-                start_show[PiPresents.SHOW]=show_obj
-
+                showmanager_index=self.show_manager.register_show(field)
+                self.show_manager.set_running(showmanager_index,show_obj)
+                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
 
             elif show['type']=="liveshow":
                 show_obj= LiveShow(show,
@@ -414,29 +401,22 @@ class PiPresents:
                                                         self.showlist,
                                                         self.pp_home,
                                                         self.pp_profile)
-                start_show[PiPresents.SHOW]=show_obj                   
+                showmanager_index=self.show_manager.register_show(field)
+                self.show_manager.set_running(showmanager_index,show_obj)
+                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
+                
             else:
                 self.mon.err(self,"unknown mediashow type in start show - "+ show['type'])
                 self._end('error','unknown mediashow type')
 
 
-    # run each of the shows in the list
-    def run_shows(self):
-        for start_show in self.start_shows:
-                show_obj = start_show[PiPresents.SHOW]
-                show_obj.play(start_show[PiPresents.ID],self._end_play_show,top=True,command='nil')
-
-
-    def _end_play_show(self,show_id,reason,message):     
-        self.mon.log(self,"Show " + str(show_id) + " returned to Pipresents with reason: " + reason )
-        self.start_shows[show_id][PiPresents.SHOW]=None
+    def _end_play_show(self,showmanager_index,reason,message):     
+        self.mon.log(self,"Show " + str(showmanager_index) + " returned to Pipresents with reason: " + reason )
+        self.show_manager.set_stopped(showmanager_index)
         # if all the shows have ended then end Pi Presents
-        all_terminated=True
-        for start_show in self.start_shows:
-            if start_show[PiPresents.SHOW]<>None:
-                all_terminated=False
-        if all_terminated==True:
+        if self.show_manager.all_shows_stopped()==True:
             self._end(reason,message)
+            
      
     def _end(self,reason,message):
         self.mon.log(self,"Pi Presents ending with message: " + message)

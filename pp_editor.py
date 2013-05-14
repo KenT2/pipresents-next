@@ -135,7 +135,8 @@ class PPEditor:
         typemenu.add_command(label='Message', command = self.new_message_track)
         typemenu.add_command(label='Show', command = self.new_show_track)
         typemenu.add_command(label='Menu Background', command = self.new_menu_background_track)
-        typemenu.add_command(label='Child Show', command = self.new_child_show_track) 
+        typemenu.add_command(label='Child Show', command = self.new_child_show_track)
+        typemenu.add_command(label='Control', command = self.new_control_track)
         trackmenu.add_cascade(label='New', menu = typemenu)
 
         toolsmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
@@ -394,11 +395,11 @@ class PPEditor:
                 #self.mon.log (self,"Checking version "+profile_file)
                 self.current_showlist.open_json(self.pp_profile_dir+os.sep+"pp_showlist.json")
                 if float(self.current_showlist.sissue())<float(self.editor_issue):
+                    self.mon.log(self,"Version of profile "+profile_file+ "  is being updated to "+self.editor_issue)
                     self.update_profile()
-                    self.mon.log(self,"Version of profile "+profile_file+ " has been updated to "+self.editor_issue)
                 elif (self.command_options['forceupdate'] == True and float(self.current_showlist.sissue())==float(self.editor_issue)):
+                    self.mon.log(self, "Forced updating of " + profile_file + ' to '+self.editor_issue)
                     self.update_profile()
-                    self.mon.log(self, "Forced update of " + profile_file + ' to '+self.editor_issue)
                 elif float(self.current_showlist.sissue())>float(self.editor_issue):
                     tkMessageBox.showwarning("Pi Presents", "Version of profile " +profile_file+ " is greater than editor, skipping")
                 else:
@@ -679,8 +680,7 @@ class PPEditor:
     def m_edit_track(self):
         self.edit_track(PPdefinitions.track_types,PPdefinitions.track_field_specs)
 
-    def edit_track(self,track_types,field_specs):
-       
+    def edit_track(self,track_types,field_specs):      
         if self.current_medialist<>None and self.current_medialist.track_is_selected():
             d=EditItemDialog(self.root,"Edit Track",self.current_medialist.selected_track(),track_types,field_specs,self.show_refs())
             if d.result == True:
@@ -711,35 +711,32 @@ class PPEditor:
                 self.current_medialist.update(self.current_medialist.length()-1,values)
             self.current_medialist.select(self.current_medialist.length()-1)
             self.refresh_tracks_display()
-
+            self.save_medialist()
 
     def new_message_track(self):
         self.new_track(PPdefinitions.new_tracks['message'],None)
-        self.save_medialist()
+
                        
     def new_video_track(self):
         self.new_track(PPdefinitions.new_tracks['video'],None)
-        self.save_medialist()
-        
+  
     def new_audio_track(self):
         self.new_track(PPdefinitions.new_tracks['audio'],None)
-        self.save_medialist()
-    
+
     def new_image_track(self):
         self.new_track(PPdefinitions.new_tracks['image'],None)
-        self.save_medialist()
-    
+
     def new_show_track(self):
         self.new_track(PPdefinitions.new_tracks['show'],None)
-        self.save_medialist()
-        
+ 
     def new_menu_background_track(self):
         self.new_track(PPdefinitions.new_tracks['menu-background'],None)
-        self.save_medialist()
 
     def new_child_show_track(self):
         self.new_track(PPdefinitions.new_tracks['child-show'],None)
-        self.save_medialist()
+
+    def new_control_track(self):
+        self.new_track(PPdefinitions.new_tracks['control'],None)
 
     def remove_track(self):
         if  self.current_medialist<>None and self.current_medialist.length()>0 and self.current_medialist.track_is_selected():

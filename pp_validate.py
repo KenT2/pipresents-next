@@ -144,6 +144,10 @@ class Validator:
                                 if track_file[0]=="+":
                                     track_file=pp_home+track_file[1:]
                                     if not os.path.exists(track_file): self.result.display('f',"location "+track['location']+ " background image file not found")                                
+
+                        if track['type']=='control':
+                                self.check_animate('animate-begin',track['animate-begin'])
+                                self.check_show_control(track['show-control'],v_show_labels)
    
                         # check animation fields
                         if track['type']in("image",'audio','video'):
@@ -362,6 +366,27 @@ class Validator:
         if int(hours)>23 or int(minutes)>59 or int(secs)>59:
              self.result.display('f','End Trigger, Duration: Fields are out of range: ' + line)
              return
+
+
+    def check_show_control(self,text,v_show_labels):
+        lines = text.split("\n")
+        for line in lines:
+            error_text=self.check_show_control_fields(line,v_show_labels)
+
+    def check_show_control_fields(self,line,v_show_labels):
+        fields = line.split()
+        if len(fields)==0: return
+
+        if len(fields)<>2:
+            self.result.display('f','Incorrect number of fields in: ' + line)
+            return
+
+        if fields[0] not in v_show_labels:
+                self.result.display('f',"cannot find show reference: "+ fields[0])
+        
+        if fields[1] not in ('start','stop'):
+            self.result.display('f','Incorrect command in: ' + line)
+            return
             
 # ***********************************
 # checking show animation

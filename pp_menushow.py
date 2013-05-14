@@ -101,7 +101,8 @@ class MenuShow:
             else:
                 self.mon.err(self,"Menu background not found in medialist")
                 self._end('error',"Menu background not found")
-
+                
+        self._end_menushow_signal= False
         self.egg_timer=None
 
         #start timeout alarm if required
@@ -112,6 +113,7 @@ class MenuShow:
             self.ready_callback()
         
         self.canvas.delete(ALL)
+        self.canvas.config(bg='black')
         
         # display background image
         if self.show_params['has-background']=="yes":
@@ -129,7 +131,23 @@ class MenuShow:
         self.canvas.update( )
 
 
+#stop received from another concurrent show
 
+    def managed_stop(self):
+            # if next lower show eor player is running pass down to stop bottom level
+            # ELSE stop this show
+            if self.shower<>None:
+                self.shower.managed_stop()
+            elif self.player<>None:
+                self._end_menushow_signal=True
+                self.player.key_pressed('escape')
+            else:
+                self._end('normal','stopped by showplayer')
+            
+
+
+                
+   
    # respond to key presses.
     def key_pressed(self,key_name):
         self.mon.log(self,"received key: " + key_name)
@@ -234,8 +252,6 @@ class MenuShow:
     # if they might be running then need to call terminate.
     
     def _end(self,reason,message):
-        # self.canvas.delete(ALL)
-        # self.canvas.update_idletasks( )
         self.mon.log(self,"Ending menushow: "+ self.show_params['show-ref'])  
         if self.menu_timeout_running<>None:
             self.canvas.after_cancel(self.menu_timeout_running)
@@ -398,8 +414,13 @@ class MenuShow:
 
      # at the end of a track just re-display the menu with the original callback from the menu       
     def _what_next(self,message):
-        self.mon.log(self,"Re-displaying menu")
-        self.play(self.show_id,self.end_callback,top=self.top)
+        # user wants to end
+        if self._end_menushow_signal==True:
+            self._end_menushow_signal=False
+            self._end('normal',"show ended by user")
+        else:
+            self.mon.log(self,"Re-displaying menu")
+            self.play(self.show_id,self.end_callback,top=self.top)
 
 
 

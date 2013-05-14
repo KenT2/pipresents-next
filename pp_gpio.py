@@ -170,11 +170,8 @@ class PPIO:
             pin[PPIO.PRESSED]==False
             pin[PPIO.LAST]==False
 
-    # name is the symbolic name.
+    # index is of the pins array, provided by the callback ***** needs to be name
     def is_pressed(self,name):
-        for index, pin in enumerate(PPIO.pins):
-            if name == pin[PPIO.NAME]:
-                break
         return PPIO.pins[index][PPIO.PRESSED]
 
     def do_buttons(self):
@@ -224,7 +221,7 @@ class PPIO:
     # execute an event
     def do_event(self,pin,to_state,req_time):
         self.mon.log (self,'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time())))
-        # print 'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time()))
+        print 'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time()))
         self.GPIO.output(pin,to_state)
 
 # ************************************************
@@ -293,6 +290,7 @@ class PPIO:
         delay=int(delay_text)
         
         self.add_event(pin,to_state,delay,tag)
+        self.print_events()
         return ''
 
     def pin_of(self,name):

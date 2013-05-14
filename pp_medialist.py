@@ -41,7 +41,7 @@ class MediaList:
         return self._num_tracks
 
     def append(self, track_dict):
-        print '\ntrack dict',track_dict
+        # print '\ntrack dict',track_dict
         """appends a track dictionary to the end of the medialist store"""
         self._tracks.append(copy.deepcopy(track_dict))
         self._num_tracks+=1

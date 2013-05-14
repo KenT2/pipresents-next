@@ -1,0 +1,85 @@
+{
+ "issue": "1.2", 
+ "tracks": [
+  {
+   "background-colour": "", 
+   "background-image": "", 
+   "duration": "10", 
+   "message-colour": "white", 
+   "message-font": "Helvetica 15 bold", 
+   "message-justify": "left", 
+   "text": "Initially this mediashow and the audio mediashow\nare started.\n\nThen, before a video is played, the audio show is stopped using a Control Track\n\nIt is re-started  when the video has finished.", 
+   "title": "Intro", 
+   "track-ref": "", 
+   "type": "message"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "duration": "", 
+   "location": "+/media/sarename.gif", 
+   "title": "sarename.gif", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "transition": "cut", 
+   "type": "image"
+  }, 
+  {
+   "animate-begin": "", 
+   "clear-screen": "no", 
+   "show-control": "audio stop", 
+   "shutdown": "no", 
+   "title": "Stop Audio", 
+   "track-ref": "", 
+   "type": "control"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "location": "+/media/Suits-short.mkv", 
+   "omx-audio": "", 
+   "omx-loop": "no", 
+   "omx-volume": "", 
+   "omx-window": "", 
+   "title": "Suits-short.mkv", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "type": "video"
+  }, 
+  {
+   "animate-begin": "", 
+   "clear-screen": "no", 
+   "show-control": "audio start", 
+   "shutdown": "no", 
+   "title": "Start Audio", 
+   "track-ref": "", 
+   "type": "control"
+  }, 
+  {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
+   "duration": "", 
+   "location": "+/media/sunset.gif", 
+   "title": "sunset.gif", 
+   "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
+   "transition": "cut", 
+   "type": "image"
+  }
+ ]
+}

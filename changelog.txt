@@ -1,3 +1,12 @@
+1.2.1d 14/5/2013
+PLEASE READ RELEASE NOTES
+new - facilities to control one concurrent show from another
+    control track
+	run-once repeat option in mediashow
+fixed - editor does not crash if a track is created when a medilist is not selected
+fixed - menu background is now always black
+
+
 1.2.1c 27/4/2013
 PLEASE READ RELEASE NOTES
 new - messageplayer now has a justify field to justify the text.

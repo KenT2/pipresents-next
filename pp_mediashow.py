@@ -85,7 +85,7 @@ class MediaShow:
         self._ready_callback=ready_callback
         self.top=top
         self.command=command
-        self.mon.log(self,"Starting show: Id= " + str(self.show_id)  + "  "+ self.show_params['show-ref'])
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Starting show")
 
         # check  data files are available.
         self.media_file = self.pp_profile + "/" + self.show_params['medialist']
@@ -147,11 +147,26 @@ class MediaShow:
 # Respond to external events
 # ********************************
 
+#stop received from another concurrent show
+
+    def managed_stop(self):
+           # if next lower show is running pass down to stop the show and lower level
+            if self.shower<>None:
+                self.shower.managed_stop()
+            else:
+                #stop the show if not at top
+                self._end_mediashow_signal=True
+                # and if track is runing stop that first
+                if self.player<>None:
+                    self.player.key_pressed('escape')
+
+
    # respond to key presses
     def key_pressed(self,key_name):
-        self.mon.log(self,"received key: " + key_name)
+        self.mon.log(self, self.show_params['show-ref']+ ' '+ str(self.show_id)+": received key: " + key_name)
         if self.show_params['disable-controls']=='yes':
-            return 
+            return
+
         if key_name=='':
             pass
         
@@ -241,13 +256,13 @@ class MediaShow:
     # kill or error
     def terminate(self,reason):
         if self.shower<>None:
-            self.mon.log(self,"sent terminate to shower")
+            self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": sent terminate to shower")
             self.shower.terminate(reason)
         elif self.player<>None:
-            self.mon.log(self,"sent terminate to player")
+            self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": sent terminate to player")
             self.player.terminate(reason)
         else:
-            self._end(reason,'terminated without terminating shower or player')
+            self._end(reason,' terminated without terminating shower or player')
 
  
     def _tidy_up(self):
@@ -309,7 +324,7 @@ class MediaShow:
 
     def _end(self,reason,message):
         self._end_mediashow_signal=False
-        self.mon.log(self,"Ending Mediashow: "+ self.show_params['show-ref'])
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Ending Mediashow")
         self._tidy_up()
         self._end_callback(self.show_id,reason,message)
         self=None
@@ -329,7 +344,7 @@ class MediaShow:
         if self.ready_callback<>None:
             self.ready_callback()
 
-        self.mon.log(self,"Waiting for trigger: "+ self.show_params['trigger'])
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Waiting for trigger: "+ self.show_params['trigger'])
         
         if self.show_params['trigger']=="button":
             # blank screen waiting for trigger if auto, otherwise display something
@@ -475,6 +490,9 @@ class MediaShow:
                 elif self.show_params['sequence']=="ordered" and self.show_params['repeat']=='oneshot' and self.top==True:
                     self._wait_for_trigger()
 
+                elif self.show_params['sequence']=="ordered" and self.show_params['repeat']=='single-run' and self.top==True:
+                   self._end('normal',"End of Single Run")
+
                 elif self._waiting_for_interval==True:
                     if self._interval_timer_signal==True:
                         self._interval_timer_signal=False
@@ -533,7 +551,7 @@ class MediaShow:
     # used to display internal messages in situations where a medialist entry could be used.
     def display_message(self,canvas,source,content,duration,_display_message_callback):
             self._display_message_callback=_display_message_callback
-            tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','background-colour':'','background-image':''}
+            tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','background-colour':'','message-justify':'left','background-image':''}
             self.player=MessagePlayer(self.show_id,canvas,self.pp_home,tp,tp)
             self.player.play(content,self._display_message_end,None)
 
@@ -550,7 +568,7 @@ class MediaShow:
         track_file = selected_track['location']
         if track_file<>'' and track_file[0]=="+":
                 track_file=self.pp_home+track_file[1:]
-        self.mon.log(self,"Track to play is: "+ track_file)
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Track to play is: "+ track_file)
         return track_file     
          
         
@@ -575,7 +593,7 @@ class MediaShow:
         self.player=None
         self.shower=None
         track_type = selected_track['type']
-        self.mon.log(self,"Track type is: "+ track_type)
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Track type is: "+ track_type)
         
         if track_type=="video":
             # create a videoplayer
@@ -613,7 +631,15 @@ class MediaShow:
                                     self.ready_callback,
                                     enable_menu=enable_child
                                     )
-         
+            
+        elif track_type=="control":
+            # create a controlplayer
+            track_file=None
+            self.player=ShowPlayer(self.show_id,self.canvas,self.pp_home,self.show_params,selected_track,self.pp_profile)
+            self.player.play(self.showlist,
+                                        self.end_player,
+                                        self.ready_callback,
+                                        enable_menu=enable_child)
  
         elif track_type=="show":
             # get the show from the showlist
@@ -664,7 +690,7 @@ class MediaShow:
         
     def end_player(self,reason,message):
         self._req_next='nil'
-        self.mon.log(self," Show Id: "+ str(self.show_id)+" Returned from player with message: "+ message)
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Returned from player with message: "+ message)
         self.player=None
         if reason in("killed","error"):
             self._end(reason,message)
@@ -678,7 +704,7 @@ class MediaShow:
 
     def end_shower(self,show_id,reason,message):
         self._req_next='nil'
-        self.mon.log(self,"Returned from shower with message: "+ message)
+        self.mon.log(self,self.show_params['show-ref']+ ' '+ str(self.show_id)+ ": Returned from shower with message: "+ message)
         self.shower=None
         if reason in("killed","error"):
             self._end(reason,message)
@@ -708,3 +734,4 @@ class MediaShow:
         
 from pp_menushow import MenuShow
 from pp_liveshow import LiveShow
+from pp_showplayer import ShowPlayer

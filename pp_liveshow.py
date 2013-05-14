@@ -189,6 +189,19 @@ class LiveShow:
             elif self.player<>None:
                 self.player.key_pressed('escape')
 
+
+
+    def managed_stop(self):
+        # if next lower show eor player is running pass down to stop the show/track
+        if self.shower<>None:
+            self.shower.managed_stop()
+        else:
+            self._stop('stop from managed show')
+            if self.player<>None:
+                self.player.key_pressed('escape')
+
+
+
  
    # respond to key presses.
     def key_pressed(self,key_name):
@@ -437,7 +450,7 @@ class LiveShow:
     # used to display internal messages in situations where a medialist entry could not be used.
     def display_message(self,canvas,source,content,duration,_display_message_callback):
             self._display_message_callback=_display_message_callback
-            tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','background-colour':'','background-image':''}
+            tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','message-justify':'left','background-colour':'','background-image':''}
             self.player=MessagePlayer(self.show_id,canvas,self.pp_home,tp,tp)
             self.player.play(content,self._display_message_end,None)
 

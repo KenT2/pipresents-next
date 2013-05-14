@@ -1,6 +1,6 @@
-Version 1.2.1c (beta)
+Version 1.2.1d (beta)
 
-There has been a change of profile since 1.2.1 I have added 'message-justify' to messages. Hoowever I have not changed the profile version number since this is a beta. You must however update the profiles; to do this run the editor with the --forceupdate command line option.
+There has been a change of profile since 1.2.1c I have added a number of new fields and a new type of track. However I have not changed the profile version number since this is a beta. You must update the profiles; to do this run the editor with the --forceupdate command line option.
 
 To ease the updating task there is a now editor menu option 'tools>update'  which will update all profiles in a pp_home.
 
