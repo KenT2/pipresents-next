@@ -2,7 +2,7 @@
 
 """
 Part of Pi Presents
-Pi presents is a presentation package, running on the Raspberry Pi, for museum exhibits, galleries, and presentations.
+Pi Presents is a presentation package, running on the Raspberry Pi, for museum exhibits, galleries, and presentations.
 Copyright 2012/2013, Ken Thompson
 
 See manual.pdf for instructions.
@@ -325,11 +325,13 @@ class PiPresents:
         if button=="shutdown":
             self.shutdown_pressed()
         else:
-            for start_show in self.start_shows:
-                print "sending to show" , start_show[PiPresents.NAME]
-                start_show[PiPresents.SHOW].button_pressed(button,edge)                 
+            for show in self.show_manager.shows:
+                show_obj=show[ShowManager.SHOW_OBJ]
+                if show_obj<>None:
+                    show_obj.button_pressed(button,edge) 
+                    
+           
 
-  
     # key presses - convert from events to call to _key_pressed
     def _escape_pressed(self,event): self._key_pressed("escape")              
     def _up_pressed(self,event): self._key_pressed("up")  
