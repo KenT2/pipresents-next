@@ -1,14 +1,21 @@
-
 import time
 import os
 
-from pp_utils import Monitor
-from pp_omxdriver import OMXDriver
-from pp_gpio import PPIO
 from Tkinter import *
 import Tkinter as tk
+import PIL.Image
+import PIL.ImageTk
+import PIL.ImageEnhance
+
+from pp_showmanager import ShowManager
+from pp_omxdriver import OMXDriver
+from pp_gpio import PPIO
+from pp_utils import Monitor
 
 class VideoPlayer:
+    """ plays a track using omxplayer
+        See pp_imageplayer for common software design description
+    """
 
     _CLOSED = "omx_closed"    #probably will not exist
     _STARTING = "omx_starting"  #track is being prepared
@@ -23,24 +30,23 @@ class VideoPlayer:
     def __init__(self,
                          show_id,
                         canvas,
-                        pp_home,
                         show_params,
-                        track_params ):
-        """       
-            canvas - the canvas onto which the video is to be drawn (not!!)
-            cd - configuration dictionary
-            track_params - config dictionary for this track overides cd
-        """
+                        track_params ,
+                        pp_home,
+                        pp_profile):
+
         self.mon=Monitor()
-        self.mon.on()
+        self.mon.off()
         
         #instantiate arguments
         self.show_id=show_id
-        self.show_params=show_params       #configuration dictionary for the videoplayer
-        self.pp_home=pp_home
-        self.canvas = canvas  #canvas onto which video should be played but isn't! Use as widget for alarm
+        self.canvas = canvas
+        self.show_params=show_params
         self.track_params=track_params
-        
+        self.pp_home=pp_home
+        self.pp_profile=pp_profile
+
+
         # get config from medialist if there.
         if self.track_params['omx-audio']<>"":
             self.omx_audio= self.track_params['omx-audio']
@@ -52,8 +58,31 @@ class VideoPlayer:
             self.omx_volume= self.track_params['omx-volume']
         else:
             self.omx_volume= self.show_params['omx-volume']
-        if self.omx_volume<>"": self.omx_volume= "--vol "+ str(int(self.omx_volume)*100) + ' '
-        self.omx_volume=' '
+        if self.omx_volume<>"":
+            self.omx_volume= "--vol "+ str(int(self.omx_volume)*100) + ' '
+
+        if self.track_params['omx-window']<>'':
+            self.omx_window= self.track_params['omx-window']
+        else:
+            self.omx_window= self.show_params['omx-window']
+      
+
+
+        # get background image from profile.
+        if self.track_params['background-image']<>"":
+            self.background_file= self.track_params['background-image']
+        else:
+            self.background_file= self.show_params['background-image']
+            
+        # get background colour from profile.
+        if self.track_params['background-colour']<>"":
+            self.background_colour= self.track_params['background-colour']
+        else:
+            self.background_colour= self.show_params['background-colour']
+        
+        self.centre_x = int(self.canvas['width'])/2
+        self.centre_y = int(self.canvas['height'])/2
+        
         #get animation instructions from profile
         self.animate_begin_text=self.track_params['animate-begin']
         self.animate_end_text=self.track_params['animate-end']
@@ -63,98 +92,107 @@ class VideoPlayer:
         
         # could put instance generation in play, not sure which is better.
         self.omx=OMXDriver(self.canvas)
-        self._tick_timer=None
-        self.error=False
-        self.terminate_required=False
-        self._init_play_state_machine()
+        self.tick_timer=None
+        self.init_play_state_machine()
 
 
 
     def play(self, track,
+                     showlist,
                      end_callback,
                      ready_callback,
-                     enable_menu=False, 
-                     starting_callback=None,
-                     playing_callback=None,
-                     ending_callback=None):
+                     enable_menu=False):
                          
         #instantiate arguments
+        self.showlist=showlist
         self.ready_callback=ready_callback   #callback when ready to play
         self.end_callback=end_callback         # callback when finished
-        self.starting_callback=starting_callback  #callback during starting state
-        self.playing_callback=playing_callback    #callback during playing state
-        self.ending_callback=ending_callback      # callback during ending state
-        # enable_menu is not used by videoplayer
+        self.enable_menu = enable_menu
  
+        # callback to the calling object to e.g remove egg timer and enable click areas.
+        if self.ready_callback<>None:
+            self.ready_callback()
 
-        # create animation events
-        error_text=self.ppio.animate(self.animate_begin_text,id(self))
-        if error_text<>'':
-            self.mon.err(self,error_text)
-            self.error=True
-            self._end()
-            
-        # and start playing the video.
-        if self.play_state == VideoPlayer._CLOSED:
-            self.mon.log(self,">play track received")
-            self._start_play_state_machine(track)
-            return True
+        # create an  instance of showmanager so we can control concurrent shows
+        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.canvas,self.pp_profile,self.pp_home)
+
+        error,result=self.parse_window(self.omx_window)
+        if error =='error':
+            self.mon.err(self,'omx window error: '+self.omx_window)
+            self.end('error','omx window error')
         else:
-            self.mon.log(self,"!< play track rejected")
-            return False
+            if result<>"centred":
+                self.omx_window= '--win "'+ result + '" '
+            else:
+                self.omx_window=''
 
+             # Control other shows at beginning
+            reason,message=self.show_manager.show_control(self.track_params['show-control-begin'])
+            if reason in ('error','killed'):
+                self.end_callback(reason,message)
+                self=None
+            else:      
+                # display the background
+                self.display_content()
 
-    def key_pressed(self,key_name):
-        if key_name=='':
-            return
-        elif key_name in ('p',' '):
-            self._pause()
-            return
-        elif key_name=='escape':
-            self._stop()
-            return
-
-
-
-    def button_pressed(self,button,edge):
-        if button =='pause':
-            self._pause()
-            return
-        elif button=='stop':
-            self._stop()
-            return
-
+                # create animation events
+                reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                if reason=='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:
+                    # start playing the video.
+                    if self.play_state == VideoPlayer._CLOSED:
+                        self.mon.log(self,">play track received")
+                        self.start_play_state_machine(track)
+                    else:
+                        self.mon.err(self,'play track rejected')
+                        self.end_callback('error','play track rejected')
+                        self=None
 
     def terminate(self,reason):
-        # circumvents state machine
-        self.terminate_required=True
+        # circumvents state machine and does not wait for omxplayer to close
         if self.omx<>None:
             self.mon.log(self,"sent terminate to omxdriver")
             self.omx.terminate(reason)
+            self.end('killed',' end without waiting for omxplayer to finish') # end without waiting
         else:
             self.mon.log(self,"terminate, omxdriver not running")
-            self._end()
+            self.end('killed','terminate, mplayerdriver not running')
+
+
+    def input_pressed(self,symbol):
+        if symbol[0:4]=='omx-':
+            self.control(symbol[4])
+            
+        elif symbol =='pause':
+            self.pause()
+
+        elif symbol=='stop':
+            self.stop()
+        else:
+            pass
+
+
+    def get_links(self):
+        return self.track_params['links']
+
             
                 
-
-        
 # ***************************************
 # INTERNAL FUNCTIONS
 # ***************************************
 
     # respond to normal stop
-    def _stop(self):
+    def stop(self):
         # send signal to stop the track to the state machine
         self.mon.log(self,">stop received")
-        self._stop_required_signal=True
+        self.quit_signal=True
 
-    #respond to internal error
-    def _error(self):
-        self.error=True
-        self._stop_required_signal=True
 
     #toggle pause
-    def _pause(self):
+    def pause(self):
         if self.play_state in (VideoPlayer._PLAYING,VideoPlayer._ENDING):
             self.omx.pause()
             return True
@@ -162,45 +200,21 @@ class VideoPlayer:
             self.mon.log(self,"!<pause rejected")
             return False
         
-    # other control when playing, used?
-    def _control(self,char):
-        if self.play_state==VideoPlayer._PLAYING:
-            self.mon.log(self,"> send control ot omx: "+ char)
+    # other control when playing
+    def control(self,char):
+        if self.play_state==VideoPlayer._PLAYING and char not in ('q'):
+            self.mon.log(self,"> send control to omx: "+ char)
             self.omx.control(char)
             return True
         else:
             self.mon.log(self,"!<control rejected")
             return False
 
-    # called to end omxdriver
-    def _end(self):
-            os.system("xrefresh -display :0")
-            if self._tick_timer<>None:
-                self.canvas.after_cancel(self._tick_timer)
-                self._tick_timer=None
-            if self.error==True:
-                self.end_callback("error",'error')
-                self=None 
-            elif self.terminate_required==True:
-                self.end_callback("killed",'killed')
-                self=None
-            else:
-               # clear events list for this track
-                if self.track_params['animate-clear']=='yes':
-                    self.ppio.clear_events_list(id(self))
-                # create animation events for ending
-                error_text=self.ppio.animate(self.animate_end_text,id(self))
-                if error_text=='':
-                    self.end_callback('normal',"track has terminated or quit")
-                    self=None
-                else:
-                    self.mon.err(self,error_text)
-                    self.end_callback("error",'error')
-                    self=None
 
-# ***************************************
-# # PLAYING STATE MACHINE
-# ***************************************
+
+# ***********************
+# sequencing
+# **********************
 
     """self. play_state controls the playing sequence, it has the following values.
          I am not entirely sure the starting and ending states are required.
@@ -210,25 +224,25 @@ class VideoPlayer:
          - _ending - omx is doing its termination, controls cannot be sent
     """
 
-    def _init_play_state_machine(self):
-        self._stop_required_signal=False
+    def init_play_state_machine(self):
+        self.quit_signal=False
         self.play_state=VideoPlayer._CLOSED
  
-    def _start_play_state_machine(self,track):
+    def start_play_state_machine(self,track):
         #initialise all the state machine variables
         #self.iteration = 0                             # for debugging
-        self._stop_required_signal=False     # signal that user has pressed stop
+        self.quit_signal=False     # signal that user has pressed stop
         self.play_state=VideoPlayer._STARTING
         
         #play the selected track
-        options=self.omx_audio+ " " + self.omx_volume + ' ' + self.show_params['omx-other-options']+" "
+        options=self.omx_audio+ " " + self.omx_volume + ' ' + self.omx_window + ' ' + self.show_params['omx-other-options']+" "
         self.omx.play(track,options)
         self.mon.log (self,'Playing track from show Id: '+ str(self.show_id))
         # and start polling for state changes
-        self._tick_timer=self.canvas.after(50, self._play_state_machine)
+        self.tick_timer=self.canvas.after(50, self.play_state_machine)
  
 
-    def _play_state_machine(self):      
+    def play_state_machine(self):      
         if self.play_state == VideoPlayer._CLOSED:
             self.mon.log(self,"      State machine: " + self.play_state)
             return 
@@ -240,24 +254,17 @@ class VideoPlayer:
             if self.omx.start_play_signal==True:
                 self.mon.log(self,"            <start play signal received from omx")
                 self.omx.start_play_signal=False
-                # callback to the calling object to e.g remove egg timer.
-                if self.ready_callback<>None:
-                    self.ready_callback()
-                self.canvas.config(bg='black')
-                self.canvas.delete(ALL)
-                self.display_image()
                 self.play_state=VideoPlayer._PLAYING
                 self.mon.log(self,"      State machine: omx_playing started")
-            self._do_starting()
-            self._tick_timer=self.canvas.after(50, self._play_state_machine)
+            self.tick_timer=self.canvas.after(50, self.play_state_machine)
 
         elif self.play_state == VideoPlayer._PLAYING:
             # self.mon.log(self,"      State machine: " + self.play_state)
             # service any queued stop signals
-            if self._stop_required_signal==True:
+            if self.quit_signal==True:
                 self.mon.log(self,"      Service stop required signal")
-                self._stop_omx()
-                self._stop_required_signal=False
+                self.stop_omx()
+                self.quit_signal=False
                 self.play_state = VideoPlayer._ENDING
                 
             # omxplayer reports it is terminating so change to ending state
@@ -266,41 +273,20 @@ class VideoPlayer:
                 self.mon.log(self,"            <end detected at: " + str(self.omx.video_position))
                 self.play_state = VideoPlayer._ENDING
                 
-            self._do_playing()
-            self._tick_timer=self.canvas.after(200, self._play_state_machine)
+            self.tick_timer=self.canvas.after(200, self.play_state_machine)
 
         elif self.play_state == VideoPlayer._ENDING:
             self.mon.log(self,"      State machine: " + self.play_state)
-            self._do_ending()
             # if spawned process has closed can change to closed state
             # self.mon.log (self,"      State machine : is omx process running? -  "  + str(self.omx.is_running()))
             if self.omx.is_running() ==False:
                 self.mon.log(self,"            <omx process is dead")
                 self.play_state = VideoPlayer._CLOSED
-                self._end()
+                self.end('normal','quit by user or system')
             else:
-                self._tick_timer=self.canvas.after(200, self._play_state_machine)
+                self.tick_timer=self.canvas.after(200, self.play_state_machine)
 
-
-    # allow calling object do things in each state by calling the appropriate callback
- 
-    def _do_playing(self):
-        self.video_position=self.omx.video_position
-        self.audio_position=self.omx.audio_position
-        if self.playing_callback<>None:
-                self.playing_callback() 
-
-    def _do_starting(self):
-        self.video_position=0.0
-        self.audio_position=0.0
-        if self.starting_callback<>None:
-                self.starting_callback() 
-
-    def _do_ending(self):
-        if self.ending_callback<>None:
-                self.ending_callback() 
-
-    def _stop_omx(self):
+    def stop_omx(self):
         # send signal to stop the track to the state machine
         self.mon.log(self,"         >stop omx received from state machine")
         if self.play_state==VideoPlayer._PLAYING:
@@ -309,11 +295,87 @@ class VideoPlayer:
         else:
             self.mon.log(self,"!<stop rejected")
             return False
+
+
+
+
 # *****************
-# image and text
+# ending the player
 # *****************
+
+    def end(self,reason,message):
+            # os.system("xrefresh -display :0")
+            # abort the timer
+            if self.tick_timer<>None:
+                self.canvas.after_cancel(self.tick_timer)
+                self.tick_timer=None
             
-    def display_image(self):
+            if reason in ('error','killed'):
+                self.end_callback(reason,message)
+                self=None
+
+            else:
+                # normal end so do show control and animation
+
+                # Control concurrent shows at end
+                reason,message=self.show_manager.show_control(self.track_params['show-control-end'])
+                if reason =='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:
+                   # clear events list for this track
+                    if self.track_params['animate-clear']=='yes':
+                        self.ppio.clear_events_list(id(self))
+                    
+                    # create animation events for ending
+                    reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                    if reason=='error':
+                        self.mon.err(self,message)
+                        self.end_callback(reason,message)
+                        self=None
+                    else:
+                        self.end_callback('normal',"track has terminated or quit")
+                        self=None
+
+
+
+# *****************
+# displaying things
+# *****************
+    def display_content(self):
+
+        #background colour
+        if  self.background_colour<>'':   
+           self.canvas.config(bg=self.background_colour)
+            
+        # delete previous content
+        self.canvas.delete('pp-content')
+
+        # background image
+        if self.background_file<>'':
+            self.background_img_file = self.complete_path(self.background_file)
+            if not os.path.exists(self.background_img_file):
+                self.mon.err(self,"Video background file not found: "+ self.background_img_file)
+                self.end('error',"Video background file not found")
+            else:
+                pil_background_img=PIL.Image.open(self.background_img_file)
+                self.background = PIL.ImageTk.PhotoImage(pil_background_img)
+                self.drawn = self.canvas.create_image(int(self.canvas['width'])/2,
+                                             int(self.canvas['height'])/2,
+                                             image=self.background,
+                                            anchor=CENTER,
+                                            tag='pp-content')
+                          
+        # display show text if enabled
+        if self.show_params['show-text']<> '':
+            self.canvas.create_text(int(self.show_params['show-text-x']),int(self.show_params['show-text-y']),
+                                                    anchor=NW,
+                                                  text=self.show_params['show-text'],
+                                                  fill=self.show_params['show-text-colour'],
+                                                  font=self.show_params['show-text-font'],
+                                                  tag='pp-content')
+
 
         # display track text if enabled
         if self.track_params['track-text']<> '':
@@ -321,12 +383,50 @@ class VideoPlayer:
                                                     anchor=NW,
                                                   text=self.track_params['track-text'],
                                                   fill=self.track_params['track-text-colour'],
-                                                  font=self.track_params['track-text-font'])
+                                                  font=self.track_params['track-text-font'],
+                                                  tag='pp-content')
 
-        self.mon.log(self,"Displayed  text ")
-        
+        # display instructions if enabled
+        if self.enable_menu== True:
+            self.canvas.create_text(self.centre_x, int(self.canvas['height']) - int(self.show_params['hint-y']),
+                                                  text=self.show_params['hint-text'],
+                                                  fill=self.show_params['hint-colour'],
+                                                font=self.show_params['hint-font'],
+                                                tag='pp-content')
+
+        self.canvas.tag_raise('pp-click-area')
         self.canvas.update_idletasks( )
 
+
+# ****************
+# utilities
+# *****************
+
+    def complete_path(self,track_file):
+        #  complete path of the filename of the selected entry
+        if track_file[0]=="+":
+                track_file=self.pp_home+track_file[1:]
+        self.mon.log(self,"Background image is "+ track_file)
+        return track_file
+
+
+    def parse_window(self,line):
+        fields = line.split()
+        if len(fields) not in (1,4):
+            return 'error',''
+        else:
+            if len(fields)==1:
+                if fields[0]=='centred':
+                    return 'normal',fields[0]
+                else:
+                    return 'error',''
+                            
+            elif len(fields)==4:
+                if fields[0].isdigit() and fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit():
+                    return 'normal',line
+                else:
+                    return 'error',''
+     
 
 # *****************
 #Test harness follows
@@ -426,7 +526,7 @@ class Test:
     def what_next(self,reason,message):
         self.vp=None
         if reason=='killed':
-            self._end()
+            self.end()
         else:
             if self.break_from_loop==True:
                 self.break_from_loop=False
@@ -442,7 +542,7 @@ class Test:
         self.vp=None
         print "Test Class: callback from VideoPlayer says: "+ message
         if reason=='killed':
-            self._end()
+            self.end()
         else:
             return
     
@@ -466,7 +566,7 @@ class Test:
     
     def terminate(self):
         if self.vp ==None:
-            self._end()
+            self.end()
         else:
             self.vp.terminate('killed')
             return

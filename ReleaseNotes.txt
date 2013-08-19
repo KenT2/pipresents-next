@@ -1,3 +1,35 @@
+Version 1.2.2a (beta)
+
+There has been a change of profile since 1.2.1d. However I have not changed the profile major version number since this is a beta. You must update the profiles by force; to do this run the editor with the --forceupdate command line option.
+
+To ease the updating task there is a now an editor menu option 'tools>update'  which will update all profiles in a pp_home.
+
+Play safe, keep backups!
+
+In addition the following will need to be changed:
+
+Audio Tracks - change Duration from 0 to <blank>. Zero now means zero duration; <blank> will allow the track to run to completion. Other values of Duration can be used, see the manual.
+
+Mediashows - change the Trigger for Start field to match the new input binding system:
+* To trigger off the Return or Down cursor keys:
+    Trigger For Start -> input or input-quiet Start Trigger-> <blank>
+* To trigger off a GPIO button:
+    Trigger For Start -> input or input-quiet Start Trigger-> pp-play (symbolic name bound to P1-18)
+* To trigger off a PIR:
+    Trigger For Start -> input or input-quiet Start Trigger-> PIR (bound to P1-11)	
+PIR and pp-play are now symbolic names not internal operations.
+
+Mediashows - change the Trigger For Next field:
+* Change from none to continue (just a tidy up of the meaning, operation is the same).
+* Change from GPIO to input and change the Next Input field to be a symbolic name.
+
+Control Tracks - These have been removed. All other track types now have Show Control fields  at Beginning and End of the track.
+
+gpio.cfg - the format has been modified. Any edits you have made to previous gpio.cfg will need to be made to copies of the new file. Also all operations such as play, stop have been changed to symbolic names e.g. pp-play, pp-stop to accomodate the redesigned input event binding system, do not change these back.
+
+resources.cfg - new messages have been added and the text improved. Some of the mediashowmesages have been reorgaanised.
+
+
 Version 1.2.1d (beta)
 
 There has been a change of profile since 1.2.1c I have added a number of new fields and a new type of track. However I have not changed the profile version number since this is a beta. You must update the profiles; to do this run the editor with the --forceupdate command line option.

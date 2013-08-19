@@ -3,7 +3,7 @@
  "shows": [
   {
    "show-ref": "start", 
-   "start-show": "mymenu", 
+   "start-show": "radiobuttonshow", 
    "title": "Start", 
    "type": "start"
   }, 
@@ -14,19 +14,10 @@
    "controls": "", 
    "disable-controls": "no", 
    "duration": "5", 
-   "entry-colour": "black", 
-   "entry-font": "Helvetica 30 bold", 
-   "entry-select-colour": "red", 
-   "has-background": "no", 
-   "hint-colour": "white", 
-   "hint-font": "Helvetica 30 bold", 
-   "hint-text": "Select using Up or Down, then Return", 
-   "hint-y": "100", 
+   "first-track-ref": "first", 
    "image-window": "centred", 
-   "medialist": "media.json", 
-   "menu-spacing": "70", 
-   "menu-x": "300", 
-   "menu-y": "250", 
+   "links": "pp-key-1 play track1\npp-key-2 play track2", 
+   "medialist": "page.json", 
    "mplayer-audio": "hdmi", 
    "mplayer-other-options": "", 
    "mplayer-volume": "0", 
@@ -34,16 +25,16 @@
    "omx-other-options": "", 
    "omx-volume": "0", 
    "omx-window": "centred", 
-   "show-ref": "mymenu", 
+   "show-ref": "radiobuttonshow", 
    "show-text": "", 
    "show-text-colour": "", 
    "show-text-font": "", 
    "show-text-x": "0", 
    "show-text-y": "0", 
-   "timeout": "0", 
-   "title": "Menu", 
+   "timeout": "20", 
+   "title": "Radiobuttonshow", 
    "transition": "cut", 
-   "type": "menu"
+   "type": "radiobuttonshow"
   }
  ]
 }

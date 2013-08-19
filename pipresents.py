@@ -20,15 +20,15 @@ import tkMessageBox
 
 from pp_options import command_options
 from pp_showlist import ShowList
-from pp_menushow import MenuShow
-from pp_liveshow import LiveShow
-from pp_mediashow import MediaShow
-from pp_utils import Monitor
-from pp_utils import StopWatch
 from pp_validate import Validator
 from pp_showmanager import ShowManager
 from pp_resourcereader import ResourceReader
+from pp_screendriver import ScreenDriver
 from pp_timeofday import TimeOfDay
+from pp_kbddriver import KbdDriver
+from pp_controlsmanager import ControlsManager
+from pp_utils import Monitor
+from pp_utils import StopWatch
 
 
 class PiPresents:
@@ -36,16 +36,18 @@ class PiPresents:
     def __init__(self):
         
         self.pipresents_issue="1.2"
+        self.window_width_shrink =800
+        self.window_height_shrink=200
         
         StopWatch.global_enable=False
 
 #****************************************
-# INTERPRET COMMAND LINE
+# Initialisation
 # ***************************************
-
+        # get command line options
         self.options=command_options()
-        
 
+        # get pi presents code directory
         pp_dir=sys.path[0]
         
         if not os.path.exists(pp_dir+"/pipresents.py"):
@@ -67,17 +69,12 @@ class PiPresents:
         self.mon.log(self,"sys.path[0] -  location of code: "+sys.path[0])
         # self.mon.log(self,"os.getenv('HOME') -  user home directory (not used): " + os.getenv('HOME'))
         # self.mon.log(self,"os.path.expanduser('~') -  user home directory: " + os.path.expanduser('~'))
-        
+
+        # optional other classes used
         self.ppio=None
         self.tod=None
- 
-        # create  profile  for pp_editor test files if already not there.
-        if not os.path.exists(pp_dir+"/pp_home/pp_profiles/pp_editor"):
-            self.mon.log(self,"Making pp_editor directory") 
-            os.makedirs(pp_dir+"/pp_home/pp_profiles/pp_editor")
-            
-            
-        #profile path from -p option
+         
+        #get profile path from -p option
         if self.options['profile']<>"":
             self.pp_profile_path="/pp_profiles/"+self.options['profile']
         else:
@@ -87,9 +84,9 @@ class PiPresents:
         if self.options['home'] =="":
             home = os.path.expanduser('~')+ os.sep+"pp_home"
         else:
-            home = self.options['home'] + os.sep+ "pp_home"
-            
-        self.mon.log(self,"pp_home directory is: " + home)          
+            home = self.options['home'] + os.sep+ "pp_home"         
+        self.mon.log(self,"pp_home directory is: " + home)
+        
         #check if pp_home exists.
         # try for 10 seconds to allow usb stick to automount
         # fall back to pipresents/pp_home
@@ -106,7 +103,8 @@ class PiPresents:
         self.pp_profile=self.pp_home+self.pp_profile_path
         if not os.path.exists(self.pp_profile):
             self.pp_profile=pp_dir+"/pp_home/pp_profiles/pp_profile"
-
+        self.mon.log(self,"pp_profile directory is: " + self.pp_profile)
+        
         if self.options['verify']==True:
             val =Validator()
             if  val.validate_profile(None,pp_dir,self.pp_home,self.pp_profile,self.pipresents_issue,False) == False:
@@ -116,23 +114,22 @@ class PiPresents:
         # open the resources
         self.rr=ResourceReader()
         # read the file, done once for all the other classes to use.
-        if self.rr.read(pp_dir,self.pp_home)==False:
-            #self.mon.err(self,"Version of profile " + self.showlist.sissue() + " is not  same as Pi Presents, must exit")
-            self._end('error','cannot find resources.cfg')            
+        if self.rr.read(pp_dir,self.pp_home,self.pp_profile)==False:
+            self.end('error','cannot find resources.cfg')            
 
-        
-        #initialise the showlists and read the showlists
+        #initialise and read the showlist in the profile
         self.showlist=ShowList()
         self.showlist_file= self.pp_profile+ "/pp_showlist.json"
         if os.path.exists(self.showlist_file):
             self.showlist.open_json(self.showlist_file)
         else:
             self.mon.err(self,"showlist not found at "+self.showlist_file)
-            self._end('error','showlist not found')
+            self.end('error','showlist not found')
 
+        # check profile and Pi Presents issues are compatible
         if float(self.showlist.sissue())<>float(self.pipresents_issue):
             self.mon.err(self,"Version of profile " + self.showlist.sissue() + " is not  same as Pi Presents, must exit")
-            self._end('error','wrong version of profile')
+            self.end('error','wrong version of profile')
  
         # get the 'start' show from the showlist
         index = self.showlist.index_of_show('start')
@@ -141,7 +138,7 @@ class PiPresents:
             self.starter_show=self.showlist.selected_show()
         else:
             self.mon.err(self,"Show [start] not found in showlist")
-            self._end('error','start show not found')
+            self.end('error','start show not found')
 
         
 # ********************
@@ -152,20 +149,17 @@ class PiPresents:
             call(["xset","s", "off"])
             call(["xset","s", "-dpms"])
 
-        self.root=Tk()
+        self.root=Tk()   
+       
         # control display of window decorations
         if self.options['fullscreen']==True:
             self.root.attributes('-fullscreen', True)
-            #self.root = Tk(className="fspipresents")
             os.system('unclutter &')
-        else:
-            #self.root = Tk(className="pipresents")
-            pass
-
 
         self.title='Pi Presents - '+ self.pp_profile
         self.icon_text= 'Pi Presents'
-        
+
+
         self.root.title(self.title)
         self.root.iconname(self.icon_text)
         self.root.config(bg='black')
@@ -175,30 +169,20 @@ class PiPresents:
         self.screen_height = self.root.winfo_screenheight()
 
         # set window dimensions
-        self.window_height=self.screen_height
-        self.window_width=self.screen_width
-        self.window_x=0
-        self.window_y=0
         if self.options['fullscreen']==True:
-            bar=self.options['fullscreen']
-            # allow just 2 pixels for the hidden taskbar - not any more
-            if bar in ('left','right'):
-                self.window_width=self.screen_width
-            else:
-                self.window_height=self.screen_height
-            if bar =="left":
-                self.window_x=0
-            if bar =="top":
-                self.window_y=0  
+            self.window_width=self.screen_width
+            self.window_height=self.screen_height
+            self.window_x=0
+            self.window_y=0  
             self.root.geometry("%dx%d%+d%+d"  % (self.window_width,self.window_height,self.window_x,self.window_y))
             self.root.attributes('-zoomed','1')
         else:
-            self.window_width=self.screen_width-600
-            self.window_height=self.screen_height-200
-            self.window_x=50
+            self.window_width=self.screen_width-self.window_width_shrink
+            self.window_height=self.screen_height-self.window_height_shrink
+            self.window_x=150
+            self.window_y=50  
             self.root.geometry("%dx%d%+d%+d" % (self.window_width,self.window_height,self.window_x,self.window_y))
             
-
         #canvas covers the whole window
         self.canvas_height=self.window_height
         self.canvas_width=self.window_width
@@ -207,26 +191,47 @@ class PiPresents:
         self.root.focus_set()
 
         #define response to main window closing.
-        self.root.protocol ("WM_DELETE_WINDOW", self.on_break_key)
-
-        # Always use CTRL-Break key to close the program as a get out of jail
-        self.root.bind("<Break>",self.e_on_break_key)
-        
-        #pass all other keys along to start shows and hence to 'players'
-        self.root.bind("<Escape>", self._escape_pressed)
-        self.root.bind("<Up>", self._up_pressed)
-        self.root.bind("<Down>", self._down_pressed)
-        self.root.bind("<Return>", self._return_pressed)
-        self.root.bind("<space>", self._pause_pressed)
-        self.root.bind("p", self._pause_pressed)
+        self.root.protocol ("WM_DELETE_WINDOW", self.exit_pressed)
 
         #setup a canvas onto which will be drawn the images or text
         self.canvas = Canvas(self.root, bg='black')
 
         self.canvas.config(height=self.canvas_height, width=self.canvas_width)
         self.canvas.pack()
+        
         # make sure focus is set on canvas.
         self.canvas.focus_set()
+
+# ****************************************
+# INITIALISE THE INPUT DRIVERS
+# ****************************************
+
+        # looks after bindings between symbolic names and internal operations
+        controlsmanager=ControlsManager()
+        if controlsmanager.read(pp_dir,self.pp_home,self.pp_profile)==False:
+                self.end('error','cannot find or error in controls.cfg.cfg')
+        else:
+            controlsmanager.parse_defaults()
+
+        # each driver takes a set of inputs, binds them to symboic names
+        # and sets up a callback which returns the symbolic name when an input event occurs/
+
+        # use keyboard driver to bind keys to symbolic names and to set up callback
+        kbd=KbdDriver()
+        if kbd.read(pp_dir,self.pp_home,self.pp_profile)==False:
+                self.end('error','cannot find or error in keys.cfg')
+        kbd.bind_keys(self.root,self.input_pressed)
+
+        self.sr=ScreenDriver()
+        # read the screen click area config file
+        if self.sr.read(pp_dir,self.pp_home,self.pp_profile)==False:
+            self.end('error','cannot find screen.cfg')
+
+        # create click areas on the canvas, must be polygon as outline rectangles are not filled as far as find_closest goes
+        reason,message = self.sr.make_click_areas(self.canvas,self.input_pressed)
+        if reason=='error':
+            self.mon.err(self,message)
+            self.end('error',message)
 
 
 # ****************************************
@@ -240,8 +245,8 @@ class PiPresents:
             # initialise the GPIO
             self.ppio=PPIO()
             # PPIO.gpio_enabled=False
-            if self.ppio.init(pp_dir,self.pp_profile,self.canvas,50,self.button_pressed)==False:
-                self._end('error','gpio error')
+            if self.ppio.init(pp_dir,self.pp_home,self.pp_profile,self.canvas,50,self.gpio_pressed)==False:
+                self.end('error','gpio error')
                 
             # and start polling gpio
             self.ppio.poll()
@@ -251,21 +256,93 @@ class PiPresents:
         self.tod.init(pp_dir,self.pp_home,self.canvas,500)
         self.tod.poll()
 
-        # Create list of start shows initialise them and then run them
 
-        self.show_manager=ShowManager()
-        self.show_manager.init()
+        # Create list of start shows initialise them and then run them
         self.run_start_shows()
+
+        #start tkinter
         self.root.mainloop( )
 
 
 
+# *********************
+#  RUN START SHOWS
+# ********************   
+    def run_start_shows(self):
+        #start show manager
+        show_id=-1 #start show
+        self.show_manager=ShowManager(show_id,self.showlist,self.starter_show,self.canvas,self.pp_profile,self.pp_home)
+        
+        #first time through so empty show register and set callback to terminate Pi Presents if all shows have ended.
+        self.show_manager.init(self.all_shows_ended_callback)
+
+        #parse the start shows field and start the initial shows       
+        start_shows_text=self.starter_show['start-show']
+        self.show_manager.start_initial_shows(start_shows_text)
+
+    #callback from ShowManager when all shows have ended
+    def all_shows_ended_callback(self,reason,message,force_shutdown):
+        self.mon.log(self,"All shows ended, so terminate Pi Presents")
+        if force_shutdown==True:
+            self.shutdown_required=True
+            self.mon.log(self,"shutdown forced by profile")  
+            self.terminate('killed')
+        else:
+            self.end(reason,message)
+
 
 # *********************
-# EXIT APP
-# *********************
+# User inputs
+# ********************
 
-    # kill or error
+    #gpio callback - symbol provided by gpio
+    def gpio_pressed(self,index,symbol,edge):
+        self.mon.log(self, "GPIO Pressed: "+ symbol)
+        self.input_pressed(symbol,edge,'gpio')
+
+
+    
+    # all input events call this callback with a symbolic name.              
+    def input_pressed(self,symbol,edge,source):
+        self.mon.log(self,"input received: "+symbol)
+        if symbol=='pp-exit':
+            self.exit_pressed()
+        elif symbol=='pp-shutdown':
+            self.shutdown_pressed('delay')
+        elif symbol=='pp-shutdownnow':
+            self.shutdown_pressed('now')
+        else:
+            for show in self.show_manager.shows:
+                show_obj=show[ShowManager.SHOW_OBJ]
+                if show_obj<>None:
+                    show_obj.input_pressed(symbol,edge,source)
+
+
+# **************************************
+# respond to exit inputs by terminating
+# **************************************
+
+    def shutdown_pressed(self, when):
+        if when=='delay':
+            self.root.after(5000,self.on_shutdown_delay)
+        else:
+            self.shutdown_required=True
+            self.exit_pressed()           
+
+    def on_shutdown_delay(self):
+        if self.ppio.shutdown_pressed():
+            self.shutdown_required=True
+            self.exit_pressed()
+
+         
+    def exit_pressed(self):
+        self.mon.log(self, "kill received from user")
+        #terminate any running shows and players     
+        self.mon.log(self,"kill sent to shows")   
+        self.terminate('killed')
+
+
+     # kill or error
     def terminate(self,reason):
         needs_termination=False
         for show in self.show_manager.shows:
@@ -274,31 +351,54 @@ class PiPresents:
                 self.mon.log(self,"Sent terminate to show "+ show[ShowManager.SHOW_REF])
                 show[ShowManager.SHOW_OBJ].terminate(reason)
         if needs_termination==False:
-            self._end(reason,'terminate - no termination of lower levels required')
+            self.end(reason,'terminate - no termination of lower levels required')
 
 
+# ******************************
+# Ending Pi Presents after all the showers and players are closed
+# **************************
 
+    def end(self,reason,message):
+        self.mon.log(self,"Pi Presents ending with message: " + reason + ' ' + message)
+        if reason=='error':
+            self.tidy_up()
+            self.mon.log(self, "exiting because of error")
+            #close logging files 
+            self.mon.finish()
+            exit()            
+        else:
+            self.tidy_up()
+            self.mon.log(self,"no error - exiting normally")
+            #close logging files 
+            self.mon.finish()
+            if self.shutdown_required==True:
+                call(['sudo', 'shutdown', '-h', '-t 5','now'])
+                exit()
+            else:
+                exit()
+
+
+    
+    # tidy up all the peripheral bits of Pi Presents
     def tidy_up(self):
         #turn screen blanking back on
         if self.options['noblank']==True:
             call(["xset","s", "on"])
             call(["xset","s", "+dpms"])
+            
         # tidy up gpio
         if self.options['gpio']==True and self.ppio<>None:
             self.ppio.terminate()
+            
         #tidy up time of day scheduler
         if self.tod<>None:
             self.tod.terminate()
-        #close logging files 
-        self.mon.finish()
 
-        
-    def on_kill_callback(self):
-        self.tidy_up()
-        if self.shutdown_required==True:
-            call(['sudo', 'shutdown', '-h', '-t 5','now'])
-        else:
-            exit()
+
+
+# *****************************
+# utilitities
+# ****************************
 
     def resource(self,section,item):
         value=self.rr.get(section,item)
@@ -308,136 +408,7 @@ class PiPresents:
         else:
             return value
 
-# *********************
-# Key and button presses
-# ********************
-
-    def shutdown_pressed(self):
-        self.root.after(5000,self.on_shutdown_delay)
-
-    def on_shutdown_delay(self):
-        if self.ppio.is_pressed('shutdown'):
-            self.shutdown_required=True
-            self.on_break_key()
-
-    def button_pressed(self,index,button,edge):
-        self.mon.log(self, "Button Pressed: "+button)
-        if button=="shutdown":
-            self.shutdown_pressed()
-        else:
-            for show in self.show_manager.shows:
-                show_obj=show[ShowManager.SHOW_OBJ]
-                if show_obj<>None:
-                    show_obj.button_pressed(button,edge) 
-                    
-           
-
-    # key presses - convert from events to call to _key_pressed
-    def _escape_pressed(self,event): self._key_pressed("escape")              
-    def _up_pressed(self,event): self._key_pressed("up")  
-    def _down_pressed(self,event): self._key_pressed("down")  
-    def _return_pressed(self,event): self._key_pressed("return")
-    def _pause_pressed(self,event): self._key_pressed("p")
-        
-
-    def _key_pressed(self,key_name):
-        self.mon.log(self, "Key Pressed: "+ key_name)
-        for show in self.show_manager.shows:
-                show_obj=show[ShowManager.SHOW_OBJ]
-                if show_obj<>None:
-                    show_obj.key_pressed(key_name)          
-
-
-         
-    def on_break_key(self):
-        self.mon.log(self, "kill received from user")
-        #terminate any running shows and players     
-        self.mon.log(self,"kill sent to shows")   
-        self.terminate('killed')
- 
- 
-    def e_on_break_key(self,event):
-        self.on_break_key()
-
-# *********************
-# SHOW RUNNING
-# ********************   
-        
-# Extract shows from start show
-    def run_start_shows(self):
-        start_shows_text=self.starter_show['start-show']
-        fields= start_shows_text.split()
-        for field in fields:       
-            show_index = self.showlist.index_of_show(field)
-            if show_index >=0:
-                self.showlist.select(show_index)
-                show=self.showlist.selected_show()
-            else:
-                self.mon.err(self,"Show not found in showlist: "+ field)
-                self._end('error','show not found in showlist')
-                
-            if show['type']=="mediashow":
-                show_obj = MediaShow(show,
-                                                                self.canvas,
-                                                                self.showlist,
-                                                                self.pp_home,
-                                                                self.pp_profile)
-                showmanager_index=self.show_manager.register_show(field)
-                self.show_manager.set_running(showmanager_index,show_obj)
-                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
- 
-             
-            elif show['type']=="menu":
-                show_obj = MenuShow(show,
-                                                        self.canvas,
-                                                        self.showlist,
-                                                        self.pp_home,
-                                                        self.pp_profile)
-                showmanager_index=self.show_manager.register_show(field)
-                self.show_manager.set_running(showmanager_index,show_obj)
-                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
-
-            elif show['type']=="liveshow":
-                show_obj= LiveShow(show,
-                                                        self.canvas,
-                                                        self.showlist,
-                                                        self.pp_home,
-                                                        self.pp_profile)
-                showmanager_index=self.show_manager.register_show(field)
-                self.show_manager.set_running(showmanager_index,show_obj)
-                show_obj.play(showmanager_index,self._end_play_show,top=True,command='nil')
-                
-            else:
-                self.mon.err(self,"unknown mediashow type in start show - "+ show['type'])
-                self._end('error','unknown mediashow type')
-
-
-    def _end_play_show(self,showmanager_index,reason,message):     
-        self.mon.log(self,"Show " + str(showmanager_index) + " returned to Pipresents with reason: " + reason )
-        self.show_manager.set_stopped(showmanager_index)
-        # if all the shows have ended then end Pi Presents
-        if self.show_manager.all_shows_stopped()==True:
-            self._end(reason,message)
-            
-     
-    def _end(self,reason,message):
-        self.mon.log(self,"Pi Presents ending with message: " + message)
-        if reason=='error':
-            self.mon.log(self, "exiting because of error")
-            self.tidy_up()
-            exit()            
-        if reason=='killed':
-            self.mon.log(self,"kill received - exiting")
-            self.on_kill_callback()
-        else:
-            # should never be here or fatal error
-            self.mon.log(self, "exiting because invalid end reasosn")
-            self.tidy_up()
-            exit()
-
-             
-        
-
+          
 if __name__ == '__main__':
 
     pp = PiPresents()

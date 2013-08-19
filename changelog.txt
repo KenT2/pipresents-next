@@ -1,3 +1,27 @@
+
+1.2.2 18/8/2013
+PLEASE READ RELEASE NOTES
+new - hyperlinkshow for touchscreen type shows in museums
+new - radiobuttonshow for kiosks with buttons
+new - input subsystem has been completely redesigned to facilitate the addition of new input device drivers.
+new - control track has been removed. Show Control is now available in all track types
+new - Audio tracks can now have zero duration to allow them to be used solely for animation and show control.
+enhancement - omxplayer now plays videos in a window
+enhancement - imageplayer images can be scaled to fit in a window
+enhancement - messageplayer, position of text can now be specified
+enhancement - all track types now have background colour, background images, show text, track text, and animation control
+enhancement - track and show text can now be multi-line
+enhancement - liveshows now have windows for images and videos, background images, and show text which can be applied to dynamic content.
+enhancement - shutdown the Pi or exit Pi Presents using Show Control
+enhancement - run-time controls  such as volume control for OMXPlayer and MPlayer
+enhancement - configuraton files xxx.cfg can now be in a profile or pp_home.
+enhancement - GPIO inputs can trigger events on both edges and repeatedly when in a state, fields of gpio.cfg have been modified as a consequence.
+enhancement - CTRL-BREAK can be reconfigured to another key.
+enhancement  - more/different messages in resources.cfg
+fixed - shutdown from gpio button now works again :-(
+fixed - in menus the timeout is cancelled by Up, Down etc.
+
+
 1.2.1d 14/5/2013
 PLEASE READ RELEASE NOTES
 new - facilities to control one concurrent show from another
@@ -39,7 +63,7 @@ When waiting for time of day can display the time of the next show.
 
 CONCURRENCY
 Can now play two or more shows simultaneously
-Control keys and buttons can be disable for chosen shows.
+Control keys and buttons can be disabled for chosen shows.
 
 MESSAGES
 Messages can now have background images or text.

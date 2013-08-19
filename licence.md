@@ -5,9 +5,10 @@ Copyright (c) 2013, Ken Thompson. Contact for licencing: http://www.museumoftech
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 
-This software is Careware. If you are using this software in a profit making situation please consider sharing some of those profits with the charity with which I am associated and which inspired Pi Presents.  If you use Pi Presents as part of your product I would appreciate a charitable donation and reserve the right to charge a royalty, or impose further conditions.
+This software is Careware. If you are using this software in a profit making situation please consider sharing some of those profits with the charity with which I am associated and which inspired Pi Presents.  If you sell Pi Presents as part of a supported product at a profit then I would appreciate a charitable donation and reserve the right to charge a royalty, or impose further conditions.
 
-*  The Museum of Technology, a super little museum who are currenty building themselves a larger home.
+My chosen charity:
+*  The Museum of Technology, a super little independent museum who are currenty building themselves a larger home.
 
       http://www.museumoftechnology.org.uk    Use the 'Donate Now' button.
 

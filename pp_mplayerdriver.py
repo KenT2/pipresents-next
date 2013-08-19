@@ -51,7 +51,7 @@ class mplayerDriver(object):
         self.widget=widget
         
         self.mon=Monitor()
-        self.mon.on()
+        self.mon.off()
         self._process=None
         self.paused=None
 

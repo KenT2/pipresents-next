@@ -50,7 +50,7 @@ class OMXDriver(object):
         self.widget=widget
         
         self.mon=Monitor()
-        self.mon.on()
+        self.mon.off()
         
         self.paused=None
 

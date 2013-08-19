@@ -100,27 +100,31 @@ class PPEditor:
         ptypemenu.add_command(label='Presentation', command = self.new_presentation_profile)
         ptypemenu.add_command(label='Interactive', command = self.new_interactive_profile)
         ptypemenu.add_command(label='Live Show', command = self.new_liveshow_profile)
+        ptypemenu.add_command(label='RadioButton Show', command = self.new_radiobuttonshow_profile)
+        ptypemenu.add_command(label='Hyperlink Show', command = self.new_hyperlinkshow_profile)
         ptypemenu.add_command(label='Blank', command = self.new_blank_profile)
         profilemenu.add_cascade(label='New from Template', menu = ptypemenu)
         
         showmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
-        showmenu.add_command(label='Remove', command = self.remove_show)
+        showmenu.add_command(label='Delete', command = self.remove_show)
         showmenu.add_command(label='Edit', command = self.m_edit_show)
         menubar.add_cascade(label='Show', menu = showmenu)
 
         stypemenu = Menu(showmenu, tearoff=0, bg="grey", fg="black")
         stypemenu.add_command(label='Menu', command = self.add_menu)
-        stypemenu.add_command(label='Mediashow', command = self.add_mediashow)
-        stypemenu.add_command(label='Liveshow', command = self.add_liveshow)
+        stypemenu.add_command(label='MediaShow', command = self.add_mediashow)
+        stypemenu.add_command(label='LiveShow', command = self.add_liveshow)
+        stypemenu.add_command(label='HyperlinkShow', command = self.add_hyperlinkshow)
+        stypemenu.add_command(label='RadioButtonShow', command = self.add_radiobuttonshow)
         showmenu.add_cascade(label='Add', menu = stypemenu)
         
         medialistmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         menubar.add_cascade(label='MediaList', menu = medialistmenu)
         medialistmenu.add_command(label='Add', command = self.add_medialist)
-        medialistmenu.add_command(label='Remove', command = self.remove_medialist)
+        medialistmenu.add_command(label='Delete', command = self.remove_medialist)
       
         trackmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
-        trackmenu.add_command(label='Remove', command = self.remove_track)
+        trackmenu.add_command(label='Delete', command = self.remove_track)
         trackmenu.add_command(label='Edit', command = self.m_edit_track)
         trackmenu.add_command(label='Add from Dir', command = self.add_tracks_from_dir)
         trackmenu.add_command(label='Add from File', command = self.add_track_from_file)
@@ -136,7 +140,6 @@ class PPEditor:
         typemenu.add_command(label='Show', command = self.new_show_track)
         typemenu.add_command(label='Menu Background', command = self.new_menu_background_track)
         typemenu.add_command(label='Child Show', command = self.new_child_show_track)
-        typemenu.add_command(label='Control', command = self.new_control_track)
         trackmenu.add_cascade(label='New', menu = typemenu)
 
         toolsmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
@@ -379,6 +382,14 @@ class PPEditor:
         profile = self.pp_dir+"/pp_home/pp_profiles/ppt_liveshow"
         self.new_profile(profile)
 
+    def new_radiobuttonshow_profile(self):
+        profile = self.pp_dir+"/pp_home/pp_profiles/ppt_radiobuttonshow"
+        self.new_profile(profile)
+
+    def new_hyperlinkshow_profile(self):
+        profile = self.pp_dir+"/pp_home/pp_profiles/ppt_hyperlinkshow"
+        self.new_profile(profile)
+
 # *********************************************
 # update profile
 # **********************************************
@@ -497,13 +508,21 @@ class PPEditor:
         if self.current_showlist<>None:
             showlist_file = dir + os.sep + "pp_showlist.json"
             self.current_showlist.save_list(showlist_file)
-
+            
+    def add_eventshow(self):
+        self.add_show(PPdefinitions.new_shows['eventshow'])
 
     def add_mediashow(self):
         self.add_show(PPdefinitions.new_shows['mediashow'])
 
     def add_liveshow(self):
         self.add_show(PPdefinitions.new_shows['liveshow'])
+
+    def add_radiobuttonshow(self):
+        self.add_show(PPdefinitions.new_shows['radiobuttonshow'])
+
+    def add_hyperlinkshow(self):
+        self.add_show(PPdefinitions.new_shows['hyperlinkshow'])
         
     def add_menu(self):
         self.add_show(PPdefinitions.new_shows['menu'])
@@ -521,10 +540,11 @@ class PPEditor:
 
     def remove_show(self):
         if  self.current_showlist<>None and self.current_showlist.length()>0 and self.current_showlist.show_is_selected():
-            index= self.current_showlist.selected_show_index()
-            self.current_showlist.remove(index)
-            self.save_showlist(self.pp_profile_dir)
-            self.refresh_shows_display()
+            if tkMessageBox.askokcancel("Delete Show","Delete Show"):
+                index= self.current_showlist.selected_show_index()
+                self.current_showlist.remove(index)
+                self.save_showlist(self.pp_profile_dir)
+                self.refresh_shows_display()
 
     def show_refs(self):
         _show_refs=[]
@@ -715,8 +735,7 @@ class PPEditor:
 
     def new_message_track(self):
         self.new_track(PPdefinitions.new_tracks['message'],None)
-
-                       
+            
     def new_video_track(self):
         self.new_track(PPdefinitions.new_tracks['video'],None)
   
@@ -734,9 +753,6 @@ class PPEditor:
 
     def new_child_show_track(self):
         self.new_track(PPdefinitions.new_tracks['child-show'],None)
-
-    def new_control_track(self):
-        self.new_track(PPdefinitions.new_tracks['control'],None)
 
     def remove_track(self):
         if  self.current_medialist<>None and self.current_medialist.length()>0 and self.current_medialist.track_is_selected():

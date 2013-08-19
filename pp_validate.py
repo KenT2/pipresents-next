@@ -56,7 +56,7 @@ class Validator:
             # CHECK ALL MEDIALISTS AND THEIR TRACKS
             v_media_lists = []
             for file in os.listdir(pp_profile):
-                if not file.endswith(".json") and file<>'gpio.cfg':
+                if not file.endswith(".json") and file not in ('gpio.cfg','controls.cfg','screen.cfg','keys.cfg','resources.cfg'):
                     self.result.display('f',"Invalid medialist in profile: "+ file)
                     self.result.display('t', "Validation Aborted")
                     return False
@@ -87,7 +87,7 @@ class Validator:
                     for track in tracks:
                         self.result.display('t',"    Checking track '"+track['title']+"'")
                         # check track-ref
-                        if track['track-ref'] not in ('','pp-menu-background','pp-child-show'):self.result.display('f',"invalid track-ref")
+                        # if track['track-ref'] not in ('','pp-menu-background','pp-child-show'):self.result.display('f',"invalid track-ref")
                         if track['track-ref']=='':
                             anonymous+=1
                         else:
@@ -118,16 +118,12 @@ class Validator:
                             if track['track-text']<>"":
                                 if not track['track-text-x'].isdigit(): self.result.display('f',"'track-text-x' is not 0 or a positive integer")
                                 if not track['track-text-y'].isdigit(): self.result.display('f',"'track-text-y' is not 0 or a positive integer")
+                            self.check_animate('animate-begin',track['animate-begin'])
+                            self.check_animate('animate-end',track['animate-end'])
+                            self.check_show_control(track['show-control-begin'],v_show_labels)
+                            self.check_show_control(track['show-control-end'],v_show_labels)
 
                         if track['type']=="video":
-                           if track['track-text']<>"":
-                                if not track['track-text-x'].isdigit(): self.result.display('f',"'track-text-x' is not 0 or a positive integer")
-                                if not track['track-text-y'].isdigit(): self.result.display('f',"'track-text-y' is not 0 or a positive integer")
-
-                                
-                                
-                        if track['type']=="audio":
-                            if not track['duration'].isdigit(): self.result.display('f',"'duration' is not 0 or a positive integer")
                             if track['track-text']<>"":
                                 if not track['track-text-x'].isdigit(): self.result.display('f',"'track-text-x' is not 0 or a positive integer")
                                 if not track['track-text-y'].isdigit(): self.result.display('f',"'track-text-y' is not 0 or a positive integer")
@@ -135,25 +131,45 @@ class Validator:
                                 track_file=track['background-image']
                                 if track_file[0]=="+":
                                     track_file=pp_home+track_file[1:]
-                                    if not os.path.exists(track_file): self.result.display('f',"location "+track['location']+ " background image file not found")                                
+                                    if not os.path.exists(track_file): self.result.display('f',"background-image "+track['background-image']+ " background image file not found")  
+                            self.check_animate('animate-begin',track['animate-begin'])
+                            self.check_animate('animate-end',track['animate-end'])
+                            self.check_show_control(track['show-control-begin'],v_show_labels)
+                            self.check_show_control(track['show-control-end'],v_show_labels)                           
                                 
+                        if track['type']=="audio":
+                            if track['duration']<>"" and not track['duration'].isdigit(): self.result.display('f',"'duration' is not 0 or a positive integer")
+                            if track['duration']=="0" : self.result.display('w',"'Duration' is zero")
+                            if track['track-text']<>"":
+                                if not track['track-text-x'].isdigit(): self.result.display('f',"'track-text-x' is not 0 or a positive integer")
+                                if not track['track-text-y'].isdigit(): self.result.display('f',"'track-text-y' is not 0 or a positive integer")
+                            if track['background-image']<>'':
+                                track_file=track['background-image']
+                                if track_file[0]=="+":
+                                    track_file=pp_home+track_file[1:]
+                                    if not os.path.exists(track_file): self.result.display('f',"background-image "+track['background-image']+ " background image file not found")                                
+                            self.check_animate('animate-begin',track['animate-begin'])
+                            self.check_animate('animate-end',track['animate-end'])
+                            self.check_show_control(track['show-control-begin'],v_show_labels)
+                            self.check_show_control(track['show-control-end'],v_show_labels)
+                            
                         if track['type']=="message":
                             if track['duration']<>"" and not track['duration'].isdigit(): self.result.display('f',"'duration' is not 0 or a positive integer")
                             if track['background-image']<>'':
                                 track_file=track['background-image']
                                 if track_file[0]=="+":
                                     track_file=pp_home+track_file[1:]
-                                    if not os.path.exists(track_file): self.result.display('f',"location "+track['location']+ " background image file not found")                                
-
-                        if track['type']=='control':
-                                self.check_animate('animate-begin',track['animate-begin'])
-                                self.check_show_control(track['show-control'],v_show_labels)
-   
-                        # check animation fields
-                        if track['type']in("image",'audio','video'):
+                                    if not os.path.exists(track_file): self.result.display('f',"background-image "+track['background-image']+ " background image file not found")                                
                             self.check_animate('animate-begin',track['animate-begin'])
                             self.check_animate('animate-end',track['animate-end'])
-                        
+                            self.check_show_control(track['show-control-begin'],v_show_labels)
+                            self.check_show_control(track['show-control-end'],v_show_labels)
+                            
+                        if track['type']=='control':
+                            self.check_animate('animate-begin',track['animate-begin'])
+                            self.check_show_control(track['show-control-begin'],v_show_labels)
+   
+                      
                         # CHECK CROSS REF TRACK TO SHOW
                         if track['type'] == 'show':
                                 if track['sub-show']=="":
@@ -164,6 +180,7 @@ class Validator:
                     if anonymous == 0 :self.result.display('w',"zero anonymous tracks in medialist " + file)
 
                     # check for duplicate track-labels
+                    # !!!!!!!!!!!!!!!!!! add check for all labels
                     if v_track_labels.count('pp-menu-background') >1: self.result.display('f', "more than one pp-menu-background")
                     if v_track_labels.count('pp-child-show') >1: self.result.display('f', "more than one pp-child-show")
 
@@ -240,8 +257,16 @@ class Validator:
                             if show['trigger-end']=='time':
                                 self.check_times(show['trigger-end-time'])
                             if show['trigger-end']=='duration':
-                                self.check_end_duration(show['trigger-end-time'])                            
-                                
+                                self.check_end_duration(show['trigger-end-time'])
+
+                    if show['type']=='eventshow':
+                            # !!!!! validate first, start, exit
+                            # !!!!! validate links
+                            if show['show-text']<>"":
+                                if not show['show-text-x'].isdigit(): self.result.display('f',"'show-text-x' is not 0 or a positive integer")
+                                if not show['show-text-y'].isdigit(): self.result.display('f',"'show-text-y' is not 0 or a positive integer")                        
+                            if not show['timeout'].isdigit(): self.result.display('f',"'timeout' is not 0 or a positive integer")
+                            if not show['duration'].isdigit(): self.result.display('f',"'duration' is not 0 or a positive integer")                              
                     if '.json' not in show['medialist']:
                         self.result.display('f', show['show-ref']+ " show has invalid medialist")
                         self.result.display('t', "Validation Aborted")

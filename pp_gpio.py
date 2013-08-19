@@ -19,25 +19,39 @@ class PPIO:
  
 # constants for buttons
 
-    # fields of the pins array
+# cofiguration from gpio.cfg
     PIN=0                # pin on RPi board GPIO connector e.g. P1-11
-    NAME=1             # logical name for pin, name for callback
-    USED = 2
-    DIRECTION = 3
-    THRESHOLD=4       # threshold of debounce count for state change to be considered
-    PULL = 5                  # pull up or down or blank
-    FRONT_EDGE=6      # True if callback required on front edge
-    BACK_EDGE=7     # True if callback required on back edge
-    COUNT=8          # variable - count of the number of times the input has been 0 (limited to threshold)
-    PRESSED=9      # variable - debounced state 
-    LAST = 10       # varible - last state - used to detect edge
+    DIRECTION = 1 # IN/OUT/NONE (None is not used)
+    NAME = 2      # name for output
+    RISING_NAME=3             # name for rising edge callback
+    FALLING_NAME=4      # name ofr falling edge callback
+    ONE_NAME=5     # name for one state callback
+    ZERO_NAME = 6   # name for zero state callback
+    REPEAT =  7   #reperat interval for state callbacks (mS)
+    THRESHOLD = 8       # threshold of debounce count for state change to be considered
+    PULL = 9                  # pull up or down or none
+# dynamic data
+    COUNT=10          # variable - count of the number of times the input has been 0 (limited to threshold)
+    PRESSED = 11      # variable - debounced state 
+    LAST = 12       # varible - last state - used to detect edge
+    REPEAT_COUNT = 13
 
     
-    TEMPLATE = ['','',False,'in',2,'',False,False,0,False,False]
+    TEMPLATE = ['',   #pin
+                            '',    # direction
+                            '',   #name
+                            '','','','',  #input names
+                            0,  # repeat
+                            0, #threshold
+                            '', #pull
+                            0,False,False,0]   #dynamics
     
     PINLIST = ('P1-03','P1-05','P1-07','P1-08',
              'P1-10','P1-11','P1-12','P1-13','P1-15','P1-16','P1-18','P1-19',
              'P1-21','P1-22','P1-23','P1-24','P1-26')
+
+    # index of shutdown pin
+    SHUTDOWN_INDEX=0
              
 # constants for sequencer           
     
@@ -63,17 +77,20 @@ class PPIO:
         self.options=command_options()
 
      # executed once from main program   
-    def init(self,pp_dir,pp_profile,widget,button_tick,callback=None):
+    def init(self,pp_dir,pp_home,pp_profile,widget,button_tick,callback=None):
         
         # instantiate arguments
         self.widget=widget
         self.pp_dir=pp_dir
         self.pp_profile=pp_profile
+        self.pp_home=pp_home
         self.button_tick=button_tick
         self.callback=callback
 
+        PPIO.SHUTDOWN_INDEX=0
+
         # read gpio.cfg file.
-        if self.read()==False:
+        if self.read(self.pp_dir,self.pp_home,self.pp_profile)==False:
             return False
 
         import RPi.GPIO as GPIO
@@ -87,15 +104,25 @@ class PPIO:
             pin[PPIO.PIN]=int(pin_num[0])
             if self.config.has_section(pin_def)==False:
                 self.mon.log(self, "no pin definition for "+ pin_def)
-                pin[PPIO.USED]=False                
+                pin[PPIO.DIRECTION]='None'            
             else:
-                if self.config.get(pin_def,'name')=='':
-                    pin[PPIO.USED]=False
+                # unused pin
+                if self.config.get(pin_def,'direction')=='none':
+                    pin[PPIO.DIRECTION]='none'
                 else:
-                    pin[PPIO.NAME]=self.config.get(pin_def,'name')
-                    pin[PPIO.USED]=True
                     pin[PPIO.DIRECTION]=self.config.get(pin_def,'direction')
                     if pin[PPIO.DIRECTION]=='in':
+                        # input pin
+                        pin[PPIO.RISING_NAME]=self.config.get(pin_def,'rising-name')
+                        pin[PPIO.FALLING_NAME]=self.config.get(pin_def,'falling-name')
+                        pin[PPIO.ONE_NAME]=self.config.get(pin_def,'one-name')
+                        pin[PPIO.ZERO_NAME]=self.config.get(pin_def,'zero-name')
+                        if pin[PPIO.FALLING_NAME]=='pp-shutdown':
+                            PPIO.SHUTDOWN_INDEX=index
+                        if self.config.get(pin_def,'repeat')<>'':
+                            pin[PPIO.REPEAT]=int(self.config.get(pin_def,'repeat'))
+                        else:
+                            pin[PPIO.REPEAT]=-1
                         pin[PPIO.THRESHOLD]=int(self.config.get(pin_def,'threshold'))
                         if self.config.get(pin_def,'pull-up-down')=='up':
                             pin[PPIO.PULL]=GPIO.PUD_UP
@@ -103,11 +130,9 @@ class PPIO:
                             pin[PPIO.PULL]=GPIO.PUD_DOWN
                         else:
                             pin[PPIO.PULL]=GPIO.PUD_OFF
-                            
-                        if self.config.get(pin_def,'front-edge')=='true':
-                            pin[PPIO.FRONT_EDGE]=True
-                        if self.config.get(pin_def,'back-edge')=='true':
-                            pin[PPIO.BACK_EDGE]=True
+                    else:
+                        # output pin
+                        pin[PPIO.NAME]=self.config.get(pin_def,'name')
  
             # print pin            
             PPIO.pins.append(copy.deepcopy(pin))
@@ -120,9 +145,9 @@ class PPIO:
         # set up the GPIO inputs and outputs
         for index, pin in enumerate(PPIO.pins):
             num = pin[PPIO.PIN]
-            if pin[PPIO.USED] and pin[PPIO.DIRECTION]=='in':
+            if pin[PPIO.DIRECTION]=='in':
                 self.GPIO.setup(num,self.GPIO.IN,pull_up_down=pin[PPIO.PULL])
-            elif pin[PPIO.USED] and pin[PPIO.DIRECTION]=='out':
+            elif  pin[PPIO.DIRECTION]=='out':
                 self.GPIO.setup(num,self.GPIO.OUT)
                 self.GPIO.setup(num,False)
         self.reset_inputs()
@@ -169,14 +194,18 @@ class PPIO:
             pin[PPIO.COUNT]=0
             pin[PPIO.PRESSED]==False
             pin[PPIO.LAST]==False
+            pin[PPIO.REPEAT_COUNT]=pin[PPIO.REPEAT]
 
     # index is of the pins array, provided by the callback ***** needs to be name
-    def is_pressed(self,name):
-        return PPIO.pins[index][PPIO.PRESSED]
+    def shutdown_pressed(self):
+        if PPIO.SHUTDOWN_INDEX<>0:
+            return PPIO.pins[PPIO.SHUTDOWN_INDEX][PPIO.PRESSED]
+        else:
+            return False
 
     def do_buttons(self):
         for index, pin in enumerate(PPIO.pins):
-            if pin[PPIO.USED] and pin[PPIO.DIRECTION]=='in':
+            if pin[PPIO.DIRECTION]=='in':
                 # debounce
                 if self.GPIO.input(pin[PPIO.PIN])==0:
                     if pin[PPIO.COUNT]<pin[PPIO.THRESHOLD]:
@@ -190,16 +219,31 @@ class PPIO:
                              pin[PPIO.PRESSED]=False
      
                 #detect edges
+                # falling edge
                 if pin[PPIO.PRESSED]==True and pin[PPIO.LAST]==False:
                     pin[PPIO.LAST]=pin[PPIO.PRESSED]
-                    if  pin[PPIO.FRONT_EDGE]==True and self.callback <> None:
-                        self.callback(index, pin[PPIO.NAME],"front")
-       
+                    pin[PPIO.REPEAT_COUNT]=pin[PPIO.REPEAT]
+                    if  pin[PPIO.FALLING_NAME]<>'' and self.callback <> None:
+                        self.callback(index, pin[PPIO.FALLING_NAME],"falling")
+               #rising edge
                 if pin[PPIO.PRESSED]==False and pin[PPIO.LAST]==True:
-                    pin[PPIO.LAST]=pin[PPIO.PRESSED]     
-                    if  pin[PPIO.BACK_EDGE]==True and self.callback <> None:
-                         self.callback(index, pin[PPIO.NAME],"back")         
+                    pin[PPIO.LAST]=pin[PPIO.PRESSED]
+                    pin[PPIO.REPEAT_COUNT]=pin[PPIO.REPEAT]
+                    if  pin[PPIO.RISING_NAME]<>'' and self.callback <> None:
+                         self.callback(index, pin[PPIO.RISING_NAME],"rising")
 
+                # do state callbacks
+                if pin[PPIO.REPEAT_COUNT]==0:
+                    if pin[PPIO.ZERO_NAME]<>'' and pin[PPIO.PRESSED]==True and self.callback<>None:
+                        self.callback(index, pin[PPIO.ZERO_NAME],"zero")
+                    if pin[PPIO.ONE_NAME]<>'' and pin[PPIO.PRESSED]==False and self.callback<>None:
+                        self.callback(index, pin[PPIO.ONE_NAME],"zero")
+                    pin[PPIO.REPEAT_COUNT]=pin[PPIO.REPEAT]
+                else:
+                    if pin[PPIO.REPEAT]<>-1:
+                        pin[PPIO.REPEAT_COUNT]-=1
+
+                    
 # ************************************************
 # gpio output sequencer functions
 # ************************************************
@@ -221,7 +265,7 @@ class PPIO:
     # execute an event
     def do_event(self,pin,to_state,req_time):
         self.mon.log (self,'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time())))
-        print 'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time()))
+        # print 'pin P1-'+ str(pin)+ ' set  '+ str(to_state) + ' required: ' + str(req_time)+ ' actual: ' + str(long(time.time()))
         self.GPIO.output(pin,to_state)
 
 # ************************************************
@@ -234,9 +278,9 @@ class PPIO:
             for line in lines:
                 error_text=self.parse_animate_fields(line,tag)
                 if error_text <>'':
-                    return error_text
-            return ''
-        return''
+                    return 'error',error_text
+            return 'normal',''
+        return 'normal',''
 
     # clear event list
     def clear_events_list(self,tag):
@@ -253,7 +297,7 @@ class PPIO:
             self.mon.log(self,'reset outputs')
             for index, pin in enumerate(PPIO.pins):
                 num = pin[PPIO.PIN]
-                if pin[PPIO.USED] and pin[PPIO.DIRECTION]=='out':
+                if pin[PPIO.DIRECTION]=='out':
                     self.GPIO.output(num,False)
 
 # ************************************************
@@ -290,13 +334,13 @@ class PPIO:
         delay=int(delay_text)
         
         self.add_event(pin,to_state,delay,tag)
-        self.print_events()
+        # self.print_events()
         return ''
 
     def pin_of(self,name):
         for pin in PPIO.pins:
             # print " in list" + pin[PPIO.NAME] + str(pin[PPIO.PIN] )
-            if pin[PPIO.NAME]==name and pin[PPIO.DIRECTION]=='out' and pin[PPIO.USED]==True:
+            if pin[PPIO.NAME]==name and pin[PPIO.DIRECTION]=='out':
                 return pin[PPIO.PIN]
         return -1
 
@@ -354,30 +398,33 @@ class PPIO:
 # reading gpio.cfg functions
 # ************************************
 
-    def read(self):
-        tryfile=self.pp_profile+os.sep+"gpio.cfg"
-        if os.path.exists(tryfile):
-             filename=tryfile
-        else:
-            self.mon.log(self,"GPIO config not found at "+ tryfile)
-            tryfile=self.pp_dir+os.sep+'pp_home'+os.sep+"gpio.cfg"
+    def read(self,pp_dir,pp_home,pp_profile):
+            # try inside profile
+            tryfile=pp_profile+os.sep+"gpio.cfg"
+            # self.mon.log(self,"Trying gpio.cfg in profile at: "+ tryfile)
             if os.path.exists(tryfile):
-                filename=tryfile
+                 filename=tryfile
             else:
-                self.mon.log(self,"GPIO config not found at "+ tryfile)
-                self.mon.err(self,"gpio.cfg not found")
-                return False   
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(filename)
-        self.mon.log(self,"Read GPIO config from "+ filename)
-        return True
+                # try inside pp_home
+                # self.mon.log(self,"gpio.cfg not found at "+ tryfile+ " trying pp_home")
+                tryfile=pp_home+os.sep+"gpio.cfg"
+                if os.path.exists(tryfile):
+                    filename=tryfile
+                else:
+                    # try inside pipresents
+                    # self.mon.log(self,"gpio.cfg not found at "+ tryfile + " trying inside pipresents")
+                    tryfile=pp_dir+os.sep+'pp_home'+os.sep+"gpio.cfg"
+                    if os.path.exists(tryfile):
+                        filename=tryfile
+                    else:
+                        self.mon.log(self,"gpio.cfg not found at "+ tryfile)
+                        self.mon.err(self,"gpio.cfg not found")
+                        return False   
+            self.config = ConfigParser.ConfigParser()
+            self.config.read(filename)
+            self.mon.log(self,"gpio.cfg read from "+ filename)
+            return True
 
-        
-    def get(self,section,item):
-        if self.config.has_option(section,item)==False:
-            return False
-        else:
-            return self.config.get(section,item)
 
 
 # ******************************

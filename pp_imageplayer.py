@@ -1,141 +1,185 @@
+import os
+import time
+
+from Tkinter import *
+import Tkinter
+
 import PIL.Image
 import PIL.ImageTk
 import PIL.ImageEnhance
 
-from Tkinter import *
-import Tkinter
-import os
-import time
-
 from pp_resourcereader import ResourceReader
-from pp_utils import Monitor
+from pp_showmanager import ShowManager
 from pp_gpio import PPIO
+from pp_utils import Monitor
 
 
 class ImagePlayer:
-    """ Displays an image on a canvas for a period of time. Image display can be interrupted
-          Implements animation of transitions but Pi is too slow without GPU aceleration."""
+    """ Displays an image on a canvas for a period of time. Image display can be paused and interrupted
+        __init_ just makes sure that all the things the player needs are available
+        play starts playing the track and returns immeadiately
+        play must end up with a call to tkinter's after, the after callback will interrogae the playing state at intervals and
+        eventually return through end_callback
+        input-pressed receives user input while the track is playing. it might pass the input on to the driver
+        Input-pressed must not wait, it must set a signal and return immeadiately.
+        The signal is interrogated by the after callback.
+    """
 
     # slide state constants
     NO_SLIDE = 0
-    SLIDE_IN = 1
-    SLIDE_DWELL= 2
-    SLIDE_OUT= 3
+    SLIDE_DWELL= 1
 
 # *******************
 # external commands
 # *******************
 
-    def __init__(self,show_id,canvas,pp_home,show_params,track_params):
+    def __init__(self,show_id,canvas,show_params,track_params,pp_home,pp_profile):
         """
+                show_id - show instance that player is run from (for monitoring only)
                 canvas - the canvas onto which the image is to be drawn
-                cd -  dictionary of show parameters
+                show_params -  dictionary of show parameters
                 track_params - disctionary of track paramters
+                pp_home - data home directory
+                pp_profile - profile name
         """
 
         self.mon=Monitor()
-        self.mon.on()
+        self.mon.off()
 
         self.show_id=show_id
         self.canvas=canvas
-        self.pp_home=pp_home
         self.show_params=show_params
         self.track_params=track_params
+        self.pp_home=pp_home
+        self.pp_profile=pp_profile
+
 
         # open resources
         self.rr=ResourceReader()
 
-            
-        # get config from medialist if there.
-        
+        # get parameters 
         self.animate_begin_text=self.track_params['animate-begin']
         self.animate_end_text=self.track_params['animate-end']
         
-        if 'duration' in self.track_params and self.track_params['duration']<>"":
+        if self.track_params['duration']<>"":
             self.duration= int(self.track_params['duration'])
         else:
             self.duration= int(self.show_params['duration'])
-            
-        if 'transition' in self.track_params and self.track_params['transition']<>"":
-            self.transition= self.track_params['transition']
-        else:
-            self.transition= self.show_params['transition']
-  
-        # keep dwell and porch as an integer multiple of tick          
-        self.porch = 1000 #length of pre and post porches for an image (milliseconds)
-        self.tick = 100 # tick time for image display (milliseconds)
-        self.dwell = (1000*self.duration)- (2*self.porch)
-        if self.dwell<0: self.dwell=0
-
-        self.centre_x = int(self.canvas['width'])/2
-        self.centre_y = int(self.canvas['height'])/2
-
+        
         #create an instance of PPIO so we can create gpio events
         self.ppio = PPIO()
 
+        # get background image from profile.
+        if self.track_params['background-image']<>"":
+            self.background_file= self.track_params['background-image']
+        else:
+            self.background_file= self.show_params['background-image']
+            
+        # get background colour from profile.
+        if self.track_params['background-colour']<>"":
+            self.background_colour= self.track_params['background-colour']
+        else:
+            self.background_colour= self.show_params['background-colour']
+
+
+        # get  image window from profile
+        if self.track_params['image-window'].strip()<>"":
+            self.image_window= self.track_params['image-window'].strip()
+        else:
+            self.image_window= self.show_params['image-window'].strip()
+
+            
+
     def play(self,
                     track,
+                    showlist,
                     end_callback,
                     ready_callback,
-                    enable_menu=False,
-                    starting_callback=None,
-                    playing_callback=None,
-                    ending_callback=None):
+                    enable_menu=False):
+
+        """
+                track - filename of track to be played
+                showlist - from which track was taken
+                end_callback - callback when player terminates
+                ready_callback - callback just before anytthing is displayed
+                enable_menu  - there will be a child track so display the hint text
+        """
                         
         # instantiate arguments
         self.track=track
+        self.showlist=showlist
         self.enable_menu=enable_menu
         self.ready_callback=ready_callback
         self.end_callback=end_callback
 
-        #init state and signals
-        self.state=ImagePlayer.NO_SLIDE
-        self.quit_signal=False
-        self.kill_required_signal=False
-        self.error=False
-        self._tick_timer=None
-        self.drawn=None
-        self.paused=False
-        self.pause_text=None
-
+        #get the track to be displayed
         if os.path.exists(self.track)==True:
             self.pil_image=PIL.Image.open(self.track)
-            # adjust brightness and rotate (experimental)
-            # pil_image_enhancer=PIL.ImageEnhance.Brightness(pil_image)
-            # pil_image=pil_image_enhancer.enhance(0.1)
-            # pil_image=pil_image.rotate(45)
-            # tk_image = PIL.ImageTk.PhotoImage(pil_image)
         else:
             self.pil_image=None
 
-        # and start image rendering
-        self.mon.log(self,'playing track from show Id: '+str(self.show_id))
-        self._start_front_porch()
+        #init state and signals  
+        self.centre_x = int(self.canvas['width'])/2
+        self.centre_y = int(self.canvas['height'])/2
+        self.tick = 100 # tick time for image display (milliseconds)
+        self.dwell = 10*self.duration
+        self.dwell_counter=0
+        self.state=ImagePlayer.NO_SLIDE
+        self.quit_signal=False
+        self.drawn=None
+        self.paused=False
+        self.pause_text=None
+        self.tick_timer=None
+        
+
+        #parse the image_window
+        error,self.image_x1,self.image_y1,self.image_x2,self.image_y2,self.filter=self.parse_window(self.image_window)
+        if error =='error':
+            self.mon.err(self,'image window error: '+self.image_window)
+            self.end('error','image window error')
+        else:
+
+            # create an  instance of showmanager so we can control concurrent shows
+            self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.canvas,self.pp_profile,self.pp_home)
+
+             # Control other shows at beginning
+            reason,message=self.show_manager.show_control(self.track_params['show-control-begin'])
+            if reason == 'error':
+                self.end_callback(reason,message)
+                self=None
+            else:
+                #display content
+                self.display_content()
+
+                # create animation events
+                reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                if reason=='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:                              
+                    # start dwelling
+                    self.mon.log(self,'playing track from show Id: '+str(self.show_id))
+                    self.start_dwell()
 
         
-    def key_pressed(self,key_name):
-        if key_name=='':
-            return
-        elif key_name in ('p',' '):
+    def input_pressed(self,symbol):
+        if symbol =='pause':
             self.pause()
-        elif key_name=='escape':
-            self._stop()
-            return
-
-    def button_pressed(self,button,edge):
-        if button =='pause':
-            self.pause()
-        elif button=='stop':
-            self._stop()
+        elif symbol=='stop':
+            self.stop()
             return
 
     def terminate(self,reason):
-        if reason=='error':
-            self.error=True
-            self.quit_signal=True
-        else:
-            self.kill_required_signal=True
-            self.quit_signal=True
+        # no lower level things to terminate so just go to end
+        self.end(reason,'kill or error')
+
+    def get_links(self):
+        return self.track_params['links']
+      
+# *******************
+# internal functions
+# *******************
 
     def pause(self):
         if not self.paused:
@@ -143,129 +187,28 @@ class ImagePlayer:
         else:
             self.paused=False
 
-    
-        
-# *******************
-# internal functions
-# *******************
-
-    def _stop(self):
+    def stop(self):
         self.quit_signal=True
         
-    def _error(self):
-        self.error=True
-        self.quit_signal=True
-  
-     #called when back porch has completed or quit signal is received
-    def _end(self,reason,message):
-        if self._tick_timer<>None:
-            self.canvas.after_cancel(self._tick_timer)
-            self._tick_timer=None
-        self.quit_signal=False
-        # self.canvas.delete(ALL)
-        self.canvas.update_idletasks( )
-        self.state=self.NO_SLIDE
-        if self.error==True or reason=='error':
-            self.end_callback("error",message)
-            self=None          
-        elif self.kill_required_signal==True:
-            self.end_callback("killed",message)
-            self=None           
-        else:
-           # clear events list for this track
-            if self.track_params['animate-clear']=='yes':
-                self.ppio.clear_events_list(id(self))
-            # create animation events for ending
-            error_text=self.ppio.animate(self.animate_end_text,id(self))
-            if error_text=='':
-                self.end_callback('normal',"track has terminated or quit")
-                self=None
-            else:
-                self.mon.err(self,error_text)
-                self.end_callback("error",'error')
-                self=None
 
 
-
-    def resource(self,section,item):
-        value=self.rr.get(section,item)
-        if value==False:
-            self.mon.err(self, "resource: "+section +': '+ item + " not found" )
-            self._error()
-        else:
-            return value
-
-
-
-    def _start_front_porch(self):
-        self.state=ImagePlayer.SLIDE_IN
-        self.porch_counter=0
-        if self.ready_callback<>None: self.ready_callback()
-
-        if self.pil_image<>None or self.enable_menu== True or self.show_params['show-text']<> '' or self.track_params['track-text']<> '':
-                self.canvas.delete(ALL)
-
-        if self.transition=="cut":
-            #just display the slide full brightness. No need for porch but used for symmetry
-            if self.pil_image<>None:
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                      image=self.tk_img, anchor=CENTER)
-
-  
-        elif self.transition=="fade":
-            #experimental start black and increase brightness (controlled by porch_counter).
-            self._display_image()
-
-        elif self.transition == "slide":
-            #experimental, start in middle and move to right (controlled by porch_counter)
-            if self.pil_image<>None:
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                  image=self.tk_img, anchor=CENTER)
-            
-        elif self.transition=="crop":
-            #experimental, start in middle and crop from right (controlled by porch_counter)
-            if self.pil_image<>None:
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                  image=self.tk_img, anchor=CENTER)
-        self.canvas.update_idletasks()
-
-        # create animation events
-        error_text=self.ppio.animate(self.animate_begin_text,id(self))
-        if error_text<>'':
-            self.mon.err(self,error_text)
-            self.error=True
-            self._end()
-                                                  
-        self._tick_timer=self.canvas.after(self.tick, self._do_front_porch)
         
-            
-    def _do_front_porch(self):
-        if self.quit_signal == True:
-            self._end('normal','user quit')
-        else:
-            self.porch_counter=self.porch_counter+1
-            # print "doing slide front porch " +str(self.porch_counter)
-            self.canvas.config(bg='black')
-            self._display_image()
-            if self.porch_counter==self.porch/self.tick:
-                self._start_dwell()
-            else:
-                self._tick_timer=self.canvas.after(self.tick,self._do_front_porch)
+# ******************************************
+# Sequencing
+# ********************************************
 
+    def start_dwell(self):
 
-    def _start_dwell(self):
+        if self.ready_callback<>None:
+            self.ready_callback()
         self.state=ImagePlayer.SLIDE_DWELL
-        self.dwell_counter=0
-        self._tick_timer=self.canvas.after(self.tick, self._do_dwell)
+        self.tick_timer=self.canvas.after(self.tick, self.do_dwell)
 
         
-    def _do_dwell(self):
+    def do_dwell(self):
         if self.quit_signal == True:
             self.mon.log(self,"quit received")
-            self._end('normal','user quit')
+            self.end('normal','user quit')
         else:
             if self.paused == False:
                 self.dwell_counter=self.dwell_counter+1
@@ -283,90 +226,113 @@ class ImagePlayer:
                     self.pause_text=None
                     self.canvas.update_idletasks( )
 
-            if self.dwell_counter==self.dwell/self.tick:
-                self._start_back_porch()
+            if self.dwell<>0 and self.dwell_counter==self.dwell:
+                self.end('normal','user quit or duration exceeded')
             else:
-                self._tick_timer=self.canvas.after(self.tick, self._do_dwell)
+                self.tick_timer=self.canvas.after(self.tick, self.do_dwell)
 
-    def _start_back_porch(self):
-        self.state=ImagePlayer.SLIDE_OUT
-        self.porch_counter=self.porch/self.tick
-        
-        if self.transition=="cut":
-             # just keep displaying the slide full brightness.
-            # No need for porch but used for symmetry
-             pass
+
+
+# *****************
+# ending the player
+# *****************
+
+    def end(self,reason,message):
+            self.state=self.NO_SLIDE
+            # abort the timer
+            if self.tick_timer<>None:
+                self.canvas.after_cancel(self.tick_timer)
+                self.tick_timer=None
             
-        elif self.transition=="fade":
-            #experimental start full and decrease brightness (controlled by porch_counter).
-            self._display_image()
+            if reason in ('error','killed'):
+                self.end_callback(reason,message)
+                self=None
 
-        elif self.transition== "slide":
-            #experimental, start in middle and move to right (controlled by porch_counter)
-            if self.pil_image<>None:
+            else:
+                # normal end so do show control and animation
+
+                # Control concurrent shows at end
+                reason,message=self.show_manager.show_control(self.track_params['show-control-end'])
+                if reason =='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:
+                   # clear events list for this track
+                    if self.track_params['animate-clear']=='yes':
+                        self.ppio.clear_events_list(id(self))
+                    
+                    # create animation events for ending
+                    reason,message=self.ppio.animate(self.animate_end_text,id(self))
+                    if reason=='error':
+                        self.mon.err(self,message)
+                        self.end_callback(reason,message)
+                        self=None
+                    else:
+                        self.end_callback('normal',"track has terminated or quit")
+                        self=None
+
+
+# **********************************
+# displaying things
+# **********************************
+
+    def display_content(self):
+
+        #background colour
+        if  self.background_colour<>'':   
+           self.canvas.config(bg=self.background_colour)
+           
+        self.canvas.delete('pp-content')
+
+
+        # background image
+        if self.background_file<>'':
+            self.background_img_file = self.complete_path(self.background_file)
+            if not os.path.exists(self.background_img_file):
+                self.mon.err(self,"Background file not found: "+ self.background_img_file)
+                self.end('error',"Background file not found")
+            else:
+                pil_background_img=PIL.Image.open(self.background_img_file)
+                self.background = PIL.ImageTk.PhotoImage(pil_background_img)
+                self.drawn = self.canvas.create_image(int(self.canvas['width'])/2,
+                                             int(self.canvas['height'])/2,
+                                             image=self.background,
+                                            anchor=CENTER,
+                                            tag='pp-content')
+                                            
+        if self.pil_image<>None:
+            if self.image_window.strip()=='centred':
+                # load and display the unmodified image in centre
                 self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
                 self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                  image=self.tk_img, anchor=CENTER)
-            
-        elif self.transition =="crop":
-            #experimental, start in middle and crop from right (controlled by porch_counter)
-            if self.pil_image<>None:
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                  image=self.tk_img, anchor=CENTER)
-
-        self._tick_timer=self.canvas.after(self.tick, self._do_back_porch)
-
-            
-    def _do_back_porch(self):
-        if self.quit_signal == True:
-            self._end('normal','user quit')
-        else:
-            self.porch_counter=self.porch_counter-1
-            self._display_image()
-            if self.porch_counter==0:
-                self._end('normal','finished')
+                                                  image=self.tk_img, anchor=CENTER,
+                                                  tag='pp-content')
             else:
-                self._tick_timer=self.canvas.after(self.tick,self._do_back_porch)
-
-    
-
-
-
-    def _display_image(self):
-        if self.transition=="cut":
-            pass
-        
-        # all the methods below have incorrect code !!!
-        elif self.transition=="fade":
-            if self.pil_image<>None:
-                self.enh=PIL.ImageEnhance.Brightness(self.pil_image)
-                prop=float(self.porch_counter)/float(20)  #????????
-                self.pil_img=self.enh.enhance(prop)
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_img)
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                      image=self.tk_img, anchor=CENTER)
-
-        elif self.transition=="slide":
-            if self.pil_image<>None:
-                self.canvas.move(self.drawn,5,0)
-            
-        elif self.transition=="crop":
-            if self.pil_image<>None:
-                self.crop= 10*self.porch_counter
-                self.pil_img=self.pil_image.crop((0,0,1000-self.crop,1080))
-                self.tk_img=PIL.ImageTk.PhotoImage(self.pil_img)           
-                self.drawn = self.canvas.create_image(self.centre_x, self.centre_y,
-                                                      image=self.tk_img, anchor=CENTER)
-
-
-        # display instructions if enabled
+                if self.image_x2==0:
+                    # load and display the unmodified image at x1,y1
+                    self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
+                    self.drawn = self.canvas.create_image(self.image_x1, self.image_y1,
+                                                      image=self.tk_img, anchor=NW,
+                                                      tag='pp-content')
+                else:
+                    # resize the image as it loads and display in the centre of the window
+                    win_centre_x=(self.image_x2+self.image_x1)/2
+                    win_centre_y= (self.image_y2+self.image_y1)/2
+                    self.pil_image.thumbnail((self.image_x2-self.image_x1,self.image_y2-self.image_y1),eval(self.filter))
+                    self.tk_img=PIL.ImageTk.PhotoImage(self.pil_image)
+                    self.drawn = self.canvas.create_image(win_centre_x, win_centre_y,
+                                                      image=self.tk_img, anchor=CENTER,
+                                                      tag='pp-content')                                                 
+                                                  
+        # display hint if enabled
        
         if self.enable_menu== True:
             self.canvas.create_text(self.centre_x, int(self.canvas['height']) - int(self.show_params['hint-y']),
                                                   text=self.show_params['hint-text'],
                                                   fill=self.show_params['hint-colour'],
-                                                font=self.show_params['hint-font'])
+                                                font=self.show_params['hint-font'],
+                                                tag='pp-content')
 
         # display show text if enabled
         if self.show_params['show-text']<> '':
@@ -374,7 +340,8 @@ class ImagePlayer:
                                                     anchor=NW,
                                                   text=self.show_params['show-text'],
                                                   fill=self.show_params['show-text-colour'],
-                                                  font=self.show_params['show-text-font'])
+                                                  font=self.show_params['show-text-font'],
+                                                    tag='pp-content')
             
         # display track text if enabled
         if self.track_params['track-text']<> '':
@@ -382,7 +349,62 @@ class ImagePlayer:
                                                     anchor=NW,
                                                   text=self.track_params['track-text'],
                                                   fill=self.track_params['track-text-colour'],
-                                                  font=self.track_params['track-text-font'])
+                                                  font=self.track_params['track-text-font'],
+                                                tag='pp-content')
             
+        self.canvas.tag_raise('pp-click-area')            
         self.canvas.update_idletasks( )
 
+
+# **********************************
+# utilties
+# **********************************
+
+
+    def parse_window(self,line):
+            fields = line.split()
+            if len(fields) not in (1,2,4,5):
+                return 'error',0,0,0,0,''
+            else:
+                if len(fields)==1:
+                    if fields[0]=='centred':
+                        return 'normal',fields[0],0,0,0,''
+                    else:
+                        return 'error',0,0,0,0,''
+                
+                elif len(fields)==2:
+                    if fields[0].isdigit() and fields[1].isdigit():
+                        return 'normal',int(fields[0]),int(fields[1]),0,0,''
+                    else:
+                        return 'error',0,0,0,0,''
+                    
+                elif len(fields)==4:
+                    if fields[0].isdigit() and fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit():
+                        return 'normal',int(fields[0]),int(fields[1]),int(fields[2]),int(fields[3]),'PIL.Image.NEAREST'
+                    else:
+                        return 'error',0,0,0,0,''
+                else:
+                    if len(fields)==5:
+                        if fields[0].isdigit() and fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit() and fields[4] in ('NEAREST','BILINEAR','BICUBIC','ANTIALIAS'):
+                            return 'normal',int(fields[0]),int(fields[1]),int(fields[2]),int(fields[3]),'PIL.Image.'+fields[4]
+                        else:
+                            return 'error',0,0,0,0,''                            
+  
+
+    def complete_path(self,track_file):
+        #  complete path of the filename of the selected entry
+        if track_file[0]=="+":
+                track_file=self.pp_home+track_file[1:]
+        self.mon.log(self,"Background image is "+ track_file)
+        return track_file     
+ 
+  
+
+# get a text string from resources.cfg
+    def resource(self,section,item):
+        value=self.rr.get(section,item)
+        if value==False:
+            self.mon.err(self, "resource: "+section +': '+ item + " not found" )
+            self.error()
+        else:
+            return value

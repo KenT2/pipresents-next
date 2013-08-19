@@ -2,13 +2,21 @@
  "issue": "1.2", 
  "tracks": [
   {
+   "animate-begin": "", 
+   "animate-clear": "no", 
+   "animate-end": "", 
    "background-colour": "", 
    "background-image": "", 
    "duration": "5", 
+   "links": "", 
    "message-colour": "white", 
    "message-font": "Helvetica 30 bold", 
    "message-justify": "left", 
-   "text": "First track of ppt_mediashow\n\n", 
+   "message-x": "", 
+   "message-y": "", 
+   "show-control-begin": "", 
+   "show-control-end": "", 
+   "text": "First track of ppt_mediashow", 
    "title": "Example Track", 
    "track-ref": "", 
    "type": "message"

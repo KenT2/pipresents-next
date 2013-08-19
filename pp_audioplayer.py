@@ -1,10 +1,5 @@
-
-import time
 import os
-
-from pp_utils import Monitor
-from pp_mplayerdriver import mplayerDriver
-from pp_gpio import PPIO
+import time
 
 from Tkinter import *
 import Tkinter as tk
@@ -12,18 +7,26 @@ import PIL.Image
 import PIL.ImageTk
 import PIL.ImageEnhance
 
-class AudioPlayer:
+from pp_mplayerdriver import mplayerDriver
+from pp_showmanager import ShowManager
+from pp_gpio import PPIO
+from pp_utils import Monitor
 
+class AudioPlayer:
+    """       
+            plays an audio track using mplayer against a coloured backgroud and image
+            track can be paused and interrupted
+            See pp_imageplayer for common software design description
+    """
+
+    #state constants
     _CLOSED = "mplayer_closed"    #probably will not exist
     _STARTING = "mplayer_starting"  #track is being prepared
     _PLAYING = "mplayer_playing"  #track is playing to the screen, may be paused
     _ENDING = "mplayer_ending"  #track is in the process of ending due to quit or end of track
     _WAITING = "wait for timeout" # track has finished but timeout still running
 
-    #_LEFT = "-af channels=2:1:0:0:1:1,resample=48000:1 "
-   # _RIGHT = "-af channels=2:1:0:1:1:0,resample=48000:1 "
-    #_STEREO = "-af channels=2,resample=48000:1 "
-
+# audio mixer matrix settings
     _LEFT = "channels=2:1:0:0:1:1"
     _RIGHT = "channels=2:1:0:1:1:0"
     _STEREO = "channels=2"
@@ -35,36 +38,44 @@ class AudioPlayer:
     def __init__(self,
                         show_id,
                         canvas,
-                         pp_home,
                         show_params,
-                        track_params ):
-        """       
-            canvas - the canvas onto which the background image is to be drawn
-            show_params - configuration of show playing the track
-            track_params - config dictionary for this track overrides show_params
-        """
+                        track_params,
+                        pp_home,
+                        pp_profile):
 
         self.mon=Monitor()
-        self.mon.on()
+        self.mon.off()
 
         
         #instantiate arguments
         self.show_id=show_id
-        self.show_params=show_params       #configuration dictionary for the videoplayer
-        self.canvas = canvas  #canvas onto which video should be played but isn't! Use as widget for alarm
-        self.pp_home=pp_home
+        self.canvas = canvas
+        self.show_params=show_params  
         self.track_params=track_params
+        self.pp_home=pp_home
+        self.pp_profile=pp_profile
 
-        # get duration (secs ) from profile
-        self.duration= int(self.track_params['duration'])
-        self.duration_limit=20*self.duration
-
+        # get duration limit (secs ) from profile
+        if self.track_params['duration']<>'':
+            self.duration= int(self.track_params['duration'])
+            self.duration_limit=20*self.duration
+        else:
+            self.duration_limit=-1
+                             
 
         # get background image from profile.
-        self.background_file  = self.track_params['background-image']
+        if self.track_params['background-image']<>"":
+            self.background_file= self.track_params['background-image']
+        else:
+            self.background_file= self.show_params['background-image']
+            
+        # get background colour from profile.
+        if self.track_params['background-colour']<>"":
+            self.background_colour= self.track_params['background-colour']
+        else:
+            self.background_colour= self.show_params['background-colour']
 
-
-        # get audio sink from profile.
+        # get audio device from profile.
         if  self.track_params['mplayer-audio']<>"":
             self.mplayer_audio= self.track_params['mplayer-audio']
         else:
@@ -101,47 +112,25 @@ class AudioPlayer:
 
         # could put instance generation in play, not sure which is better.
         self.mplayer=mplayerDriver(self.canvas)
-        self._tick_timer=None
-        self.error=False
-        self.terminate_me=False
-        self._init_play_state_machine()
+        self.tick_timer=None
+        self.init_play_state_machine()
 
 
 
     def play(self, track,
+                     showlist,
                      end_callback,
                      ready_callback,
-                     enable_menu=False, 
-                     starting_callback=None,
-                     playing_callback=None,
-                     ending_callback=None):
+                     enable_menu=False):
 
-        """
-        play - plays the specified track, the first call after __init__
-        track - full  path of track to play
-        end_callback - callback when track ends (reason,message)
-             reason = killed - return from a terminate with reason = killed
-                           error - return because player or lower level has generated and runtime error
-                           normal - anything else
-            message = ant tesxt, used for debugging 
-        ready_callback - callback when the track is ready to play, use to stop eggtimer etc.
-        enable_menu - True if the track is to have a child show
-        starting/playing/ending callback - called repeatedly in each state for show to display status, time etc.
-
-        """
-                         
         #instantiate arguments
         self.track=track
+        self.showlist=showlist
+        self.end_callback=end_callback         # callback when finished
         self.ready_callback=ready_callback   #callback when ready to play
         self.enable_menu=enable_menu
-        self.end_callback=end_callback         # callback when finished
-        self.starting_callback=starting_callback  #callback during starting state
-        self.playing_callback=playing_callback    #callback during playing state
-        self.ending_callback=ending_callback      # callback during ending state
-        # enable_menu is not used by AudioPlayer
 
-
-        # select the sound sink
+        # select the sound device
         if self.mplayer_audio<>"":
             if self.mplayer_audio=='hdmi':
                 os.system("amixer -q -c 0 cset numid=3 2")
@@ -152,71 +141,65 @@ class AudioPlayer:
         if self.ready_callback<>None:
             self.ready_callback()
 
- 
-        # display image and text
-        self.display_image()
+        # create an  instance of showmanager so we can control concurrent shows
+        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.canvas,self.pp_profile,self.pp_home)
 
-        # create animation events
-        error_text=self.ppio.animate(self.animate_begin_text,id(self))
-        if error_text<>'':
-            self.mon.err(self,error_text)
-            self.error=True
-            self._end('error',error_text)
- 
-        # and start playing the track.
-        if self.play_state == AudioPlayer._CLOSED:
-            self.mon.log(self,">play track received")
-            self._start_play_state_machine()
-            return True
+        
+        # Control other shows at beginning
+        reason,message=self.show_manager.show_control(self.track_params['show-control-begin'])
+        if reason == 'error':
+            self.mon.err(self,message)
+            self.end_callback(reason,message)
+            self=None
         else:
-            self.mon.log(self,"!< play track rejected")
-            return False
+            # display image and text
+            self.display_content()
 
+            # create animation events
+            reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+            if reason=='error':
+                self.mon.err(self,message)
+                self.end_callback(reason,message)
+                self=None
+            else:     
+                # start playing the track.
+                if self.duration_limit<>0:
+                    self.start_play_state_machine()
+                else:
+                    self.tick_timer=self.canvas.after(10, self.end_zero)
 
-    def key_pressed(self,key_name):
-        """
-        respond to user or system key  presses
-        """
-        if key_name=='':
-            return
-        elif key_name in ('p',' '):
-            self._pause()
-            return
-        elif key_name=='escape':
-            self._stop()
-            return
+    def end_zero(self):
+        self.end('normal','zero duration')
 
-
-
-    def button_pressed(self,button,edge):
-        """
-        respond to user button  presses
-        """
-        if button =='pause':
-            self._pause()
-            return
-        elif button=='stop':
-            self._stop()
-            return
-
-
+   
     def terminate(self,reason):
         """
         terminate the  player in special circumstances
-        normal user termination if by key_pressed 'escape'
+        normal user termination if by key_pressed 'stop'
         reason will be killed or error
         """
         # circumvents state machine to terminate lower level and then itself.
-        self.terminate_me=True
         if self.mplayer<>None:
             self.mon.log(self,"sent terminate to mplayerdriver")
             self.mplayer.terminate(reason)
-            self._end('killed',' end without waiting') # end without waiting
+            self.end('killed',' end without waiting for mplayer to finish') # end without waiting
         else:
             self.mon.log(self,"terminate, mplayerdriver not running")
-            self._end('killed','terminate, mplayerdriver not running')
+            self.end('killed','terminate, mplayerdriver not running')
+
+    def get_links(self):
+        return self.track_params['links']
+
+    def input_pressed(self,symbol):
+        if symbol[0:6]=='mplay-':
+            self.control(symbol[6])
             
-                
+        elif symbol == 'pause':
+            self.pause()
+
+        elif symbol=='stop':
+            self.stop()
+
 
         
 # ***************************************
@@ -224,7 +207,7 @@ class AudioPlayer:
 # ***************************************
 
     #toggle pause
-    def _pause(self):
+    def pause(self):
         if self.play_state in (AudioPlayer._PLAYING,AudioPlayer._ENDING) and self.track<>'':
             self.mplayer.pause()
             return True
@@ -233,8 +216,8 @@ class AudioPlayer:
             return False
         
     # other control when playing, not currently used
-    def _control(self,char):
-        if self.play_state==AudioPlayer._PLAYING and self.track<>'':
+    def control(self,char):
+        if self.play_state==AudioPlayer._PLAYING and self.track<>''and char not in ('q'):
             self.mon.log(self,"> send control to mplayer: "+ char)
             self.mplayer.control(char)
             return True
@@ -243,50 +226,15 @@ class AudioPlayer:
             return False
 
     # respond to normal stop
-    def _stop(self):
+    def stop(self):
         # send signal to stop the track to the state machine
         self.mon.log(self,">stop received")
-        self._stop_required_signal=True
+        self.quit_signal=True
 
-    #respond to internal error by setting flags to cause state machine to stop player
-    #use this rather than end if the driver and its spawned process might still be running
-    def _error(self):
-        self.error=True
-        self._stop_required_signal=True
-
-
-    # tidy up and end AudioPlayer.
-    def _end(self,reason,message):
-            # self.canvas.delete(ALL)
-            # abort the timer
-            if self._tick_timer<>None:
-                self.canvas.after_cancel(self._tick_timer)
-                self._tick_timer=None
-            
-            if self.error==True or reason=='error':
-                self.end_callback("error",message)
-                self=None
-                
-            elif self.terminate_me==True:
-                self.end_callback("killed",message)
-                self=None
-            else:
-               # clear events list for this track
-                if self.track_params['animate-clear']=='yes':
-                    self.ppio.clear_events_list(id(self))
-                # create animation events for ending
-                error_text=self.ppio.animate(self.animate_end_text,id(self))
-                if error_text=='':
-                    self.end_callback('normal',"track has terminated or quit")
-                    self=None
-                else:
-                    self.mon.err(self,error_text)
-                    self.end_callback("error",error_text)
-                    self=None
-                
+         
       
 # ***************************************
-# # PLAYING STATE MACHINE
+#  sequencing
 # ***************************************
 
     """self. play_state controls the playing sequence, it has the following values.
@@ -297,17 +245,16 @@ class AudioPlayer:
          - _ending - mplayer is doing its termination, controls cannot be sent
     """
 
-    def _init_play_state_machine(self):
-        self._stop_required_signal=False
+    def init_play_state_machine(self):
+        self.quit_signal=False
         self.play_state=AudioPlayer._CLOSED
  
-    def _start_play_state_machine(self):
+    def start_play_state_machine(self):
         #initialise all the state machine variables
         self.duration_count = 0
-        self._stop_required_signal=False     # signal that user has pressed stop
+        self.quit_signal=False     # signal that user has pressed stop
 
         #play the track
-
         options = self.show_params['mplayer-other-options'] + '-af '+ self.speaker_option+','+self.volume_option + ' '
         if self.track<>'':
             self.mplayer.play(self.track,options)
@@ -316,10 +263,10 @@ class AudioPlayer:
         else:
             self.play_state=AudioPlayer._PLAYING
         # and start polling for state changes and count duration
-        self._tick_timer=self.canvas.after(50, self._play_state_machine)
- 
+        self.tick_timer=self.canvas.after(50, self.play_state_machine)
 
-    def _play_state_machine(self):
+
+    def play_state_machine(self):
         self.duration_count+=1
            
         if self.play_state == AudioPlayer._CLOSED:
@@ -335,81 +282,60 @@ class AudioPlayer:
                 self.mplayer.start_play_signal=False
                 self.play_state=AudioPlayer._PLAYING
                 self.mon.log(self,"      State machine: mplayer_playing started")
-            self._do_starting()
-            self._tick_timer=self.canvas.after(50, self._play_state_machine)
+            self.tick_timer=self.canvas.after(50, self.play_state_machine)
 
         elif self.play_state == AudioPlayer._PLAYING:
             # self.mon.log(self,"      State machine: " + self.play_state)
             # service any queued stop signals
-            if self._stop_required_signal==True or (self.duration_limit<>0 and self.duration_count>self.duration_limit):
-                self.mon.log(self,"      Service stop required signa or timeout")
-                # self._stop_required_signal=False
+            if self.quit_signal==True or (self.duration_limit>0 and self.duration_count>self.duration_limit):
+                self.mon.log(self,"      Service stop required signal or timeout")
+                # self.quit_signal=False
                 if self.track<>'':
-                    self._stop_mplayer()
+                    self.stop_mplayer()
                     self.play_state = AudioPlayer._ENDING
                 else:
                     self.play_state = AudioPlayer._CLOSED
-                    self._end('normal','stop required signa or timeout')
+                    self.end('normal','stop required signal or timeout')
 
             # mplayer reports it is terminating so change to ending state
             if self.track<>'' and self.mplayer.end_play_signal:                    
                 self.mon.log(self,"            <end play signal received")
                 self.mon.log(self,"            <end detected at: " + str(self.mplayer.audio_position))
                 self.play_state = AudioPlayer._ENDING
-            self._do_playing()
-            self._tick_timer=self.canvas.after(50, self._play_state_machine)
+            self.tick_timer=self.canvas.after(50, self.play_state_machine)
 
         elif self.play_state == AudioPlayer._ENDING:
             # self.mon.log(self,"      State machine: " + self.play_state)
-            self._do_ending()
             # if spawned process has closed can change to closed state
             # self.mon.log (self,"      State machine : is mplayer process running? -  "  + str(self.mplayer.is_running()))
             if self.mplayer.is_running() ==False:
                 self.mon.log(self,"            <mplayer process is dead")
-                if self._stop_required_signal==True:
-                    self._stop_required_signal=False
+                if self.quit_signal==True:
+                    self.quit_signal=False
                     self.play_state = AudioPlayer._CLOSED
-                    self._end('normal','mplayer dead')
-                elif self.duration_limit<>0 and self.duration_count<self.duration_limit:
+                    self.end('normal','quit required or timeout')
+                elif self.duration_limit>0 and self.duration_count<self.duration_limit:
                     self.play_state= AudioPlayer._WAITING
-                    self._tick_timer=self.canvas.after(50, self._play_state_machine)
+                    self.tick_timer=self.canvas.after(50, self.play_state_machine)
                 else:
                     self.play_state = AudioPlayer._CLOSED
-                    self._end('normal','mplayer dead')
+                    self.end('normal','mplayer dead')
             else:
-                self._tick_timer=self.canvas.after(50, self._play_state_machine)
+                self.tick_timer=self.canvas.after(50, self.play_state_machine)
                 
         elif self.play_state == AudioPlayer._WAITING:
             # self.mon.log(self,"      State machine: " + self.play_state)
-            if self._stop_required_signal==True or (self.duration_limit<>0 and self.duration_count>self.duration_limit):
+            if self.quit_signal==True or (self.duration_limit>0 and self.duration_count>self.duration_limit):
                 self.mon.log(self,"      Service stop required signal or timeout from wait")
-                self._stop_required_signal=False
+                self.quit_signal=False
                 self.play_state = AudioPlayer._CLOSED
-                self._end('normal','mplayer dead')
+                self.end('normal','mplayer dead')
             else:
-                self._tick_timer=self.canvas.after(50, self._play_state_machine)
+                self.tick_timer=self.canvas.after(50, self.play_state_machine)
                     
 
 
-
-    # allow calling object do things in each state by calling the appropriate callback
- 
-    def _do_playing(self):
-        if self.track<>'':
-            self.audio_position=self.mplayer.audio_position
-        if self.playing_callback<>None:
-                self.playing_callback() 
-
-    def _do_starting(self):
-        self.audio_position=0.0
-        if self.starting_callback<>None:
-                self.starting_callback() 
-
-    def _do_ending(self):
-        if self.ending_callback<>None:
-                self.ending_callback() 
-
-    def _stop_mplayer(self):
+    def stop_mplayer(self):
         # send signal to stop the track to the state machine
         self.mon.log(self,"         >stop mplayer received from state machine")
         if self.play_state==AudioPlayer._PLAYING:
@@ -420,26 +346,74 @@ class AudioPlayer:
             return False
 
 # *****************
-# image and text
+# ending the player
+# *****************
+
+    def end(self,reason,message):
+            # abort the timer
+            if self.tick_timer<>None:
+                self.canvas.after_cancel(self.tick_timer)
+                self.tick_timer=None
+            
+            if reason in ('error','killed'):
+                self.end_callback(reason,message)
+                self=None
+
+            else:
+                # normal end so do show control and animation
+
+                # Control concurrent shows at end
+                reason,message=self.show_manager.show_control(self.track_params['show-control-end'])
+                if reason =='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:
+                   # clear events list for this track
+                    if self.track_params['animate-clear']=='yes':
+                        self.ppio.clear_events_list(id(self))
+                    
+                    # create animation events for ending
+                    reason,message=self.ppio.animate(self.animate_end_text,id(self))
+                    if reason=='error':
+                        self.mon.err(self,message)
+                        self.end_callback(reason,message)
+                        self=None
+                    else:
+                        self.end_callback('normal',"track has terminated or quit")
+                        self=None
+
+
+
+# *****************
+# displaying things
 # *****************
             
-    def display_image(self):
+    def display_content(self):
 
-        if self.background_file<>'' or self.show_params['show-text']<> '' or self.track_params['track-text']<> '' or self.enable_menu== True or self.track_params['clear-screen']=='yes':
-            self.canvas.config(bg='black')
-            self.canvas.delete(ALL)
+        #if self.background_file<>'' or self.show_params['show-text']<> '' or #self.track_params['track-text']<> '' or self.enable_menu== True or #self.track_params['clear-screen']=='yes':
+        
+        if self.track_params['clear-screen']=='yes':
+            self.canvas.delete('pp-content')
+            # self.canvas.update()
+
+        #background colour
+        if  self.background_colour<>'':   
+           self.canvas.config(bg=self.background_colour)
+            
         if self.background_file<>'':
             self.background_img_file = self.complete_path(self.background_file)
             if not os.path.exists(self.background_img_file):
                 self.mon.err(self,"Audio background file not found: "+ self.background_img_file)
-                self._end('error',"Audio background file not found")
+                self.end('error',"Audio background file not found")
             else:
                 pil_background_img=PIL.Image.open(self.background_img_file)
                 self.background = PIL.ImageTk.PhotoImage(pil_background_img)
                 self.drawn = self.canvas.create_image(int(self.canvas['width'])/2,
                                               int(self.canvas['height'])/2,
                                               image=self.background,
-                                              anchor=CENTER)
+                                              anchor=CENTER,
+                                                tag='pp-content')
                 
         # display hint text if enabled
        
@@ -447,7 +421,8 @@ class AudioPlayer:
             self.canvas.create_text(int(self.canvas['width'])/2, int(self.canvas['height']) - int(self.show_params['hint-y']),
                                                   text=self.show_params['hint-text'],
                                                   fill=self.show_params['hint-colour'],
-                                                font=self.show_params['hint-font'])
+                                                font=self.show_params['hint-font'],
+                                                tag='pp-content')
 
             
         # display show text if enabled
@@ -456,7 +431,8 @@ class AudioPlayer:
                                                     anchor=NW,
                                                   text=self.show_params['show-text'],
                                                   fill=self.show_params['show-text-colour'],
-                                                  font=self.show_params['show-text-font'])
+                                                  font=self.show_params['show-text-font'],
+                                                tag='pp-content')
             
         # display track text if enabled
         if self.track_params['track-text']<> '':
@@ -464,11 +440,19 @@ class AudioPlayer:
                                                     anchor=NW,
                                                   text=self.track_params['track-text'],
                                                   fill=self.track_params['track-text-colour'],
-                                                  font=self.track_params['track-text-font'])
+                                                  font=self.track_params['track-text-font'],
+                                                tag='pp-content')
 
         self.mon.log(self,"Displayed background and text ")
+
+        self.canvas.tag_raise('pp-click-area')
         
         self.canvas.update_idletasks( )
+
+
+# *****************
+# utilities
+# *****************
 
     def complete_path(self,track_file):
         #  complete path of the filename of the selected entry
@@ -573,7 +557,7 @@ class Test:
     def what_next(self,reason,message):
         self.vp=None
         if reason in ('killed','error'):
-            self._end(reason,message)
+            self.end(reason,message)
         else:
             if self.break_from_loop==True:
                 self.break_from_loop=False
@@ -589,7 +573,7 @@ class Test:
         self.vp=None
         print "Test Class: callback from AudioPlayer says: "+ message
         if reason in('killed','error'):
-            self._end(reason,message)
+            self.end(reason,message)
         else:
             return
     
@@ -613,7 +597,7 @@ class Test:
     
     def terminate(self):
         if self.vp ==None:
-            self._end('killled','killled')
+            self.end('killled','killled')
         else:
             self.vp.terminate('killed')
             return
