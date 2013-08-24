@@ -19,6 +19,8 @@ Mediashows - change the Trigger for Start field to match the new input binding s
     Trigger For Start -> input or input-quiet Start Trigger-> PIR (bound to P1-11)	
 PIR and pp-play are now symbolic names not internal operations.
 
+All Shows - Users of earlier versions of [pipresents-next] will need to update OMX Window  from <blank> to centred.
+
 Mediashows - change the Trigger For Next field:
 * Change from none to continue (just a tidy up of the meaning, operation is the same).
 * Change from GPIO to input and change the Next Input field to be a symbolic name.
