@@ -1,3 +1,11 @@
+1.2.2b 17/09/2013
+enhancement - non-fullscreen mode works much better, see manual for size adjustment.
+enhancements to editor - tabs, font chooser, colour chooser, location browser
+enhancements to editor - copy show, new show creates a medialist.
+enhancement - validation has caught up
+fixed - cancelling out of creating a new profile does not create profile 'None'
+tested with latest image 2013-09-10
+
 
 1.2.2 18/8/2013
 PLEASE READ RELEASE NOTES

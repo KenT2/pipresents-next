@@ -36,8 +36,10 @@ class PiPresents:
     def __init__(self):
         
         self.pipresents_issue="1.2"
-        self.window_width_shrink =800
-        self.window_height_shrink=200
+        self.nonfull_window_width = 0.6 # proportion of width
+        self.nonfull_window_height= 0.6 # proportion of height
+        self.nonfull_window_x = 0 # position of top left corner
+        self.nonfull_window_y=0   # position of top left corner
         
         StopWatch.global_enable=False
 
@@ -91,19 +93,27 @@ class PiPresents:
         # try for 10 seconds to allow usb stick to automount
         # fall back to pipresents/pp_home
         self.pp_home=pp_dir+"/pp_home"
+        found=False
         for i in range (1, 10):
             self.mon.log(self,"Trying pp_home at: " + home +  " (" + str(i)+')')
             if os.path.exists(home):
-                self.mon.log(self,"Using pp_home at: " + home)
+                found=True
                 self.pp_home=home
                 break
             time.sleep (1)
+        if found==True:
+            self.mon.log(self,"Found Requested Home Directory, using pp_home at: " + home)
+        else:    
+            self.mon.log(self,"FAILED to find requested home directory, using default to display error message: " + self.pp_home)
+
 
         #check profile exists, if not default to error profile inside pipresents
         self.pp_profile=self.pp_home+self.pp_profile_path
-        if not os.path.exists(self.pp_profile):
-            self.pp_profile=pp_dir+"/pp_home/pp_profiles/pp_profile"
-        self.mon.log(self,"pp_profile directory is: " + self.pp_profile)
+        if os.path.exists(self.pp_profile):
+            self.mon.log(self,"Found Requested profile - pp_profile directory is: " + self.pp_profile)
+        else:
+            self.pp_profile=pp_dir+"/pp_home/pp_profiles/pp_profile"   
+            self.mon.log(self,"FAILED to find requested profile, using default to display error message: pp_profile")
         
         if self.options['verify']==True:
             val =Validator()
@@ -151,15 +161,8 @@ class PiPresents:
 
         self.root=Tk()   
        
-        # control display of window decorations
-        if self.options['fullscreen']==True:
-            self.root.attributes('-fullscreen', True)
-            os.system('unclutter &')
-
         self.title='Pi Presents - '+ self.pp_profile
         self.icon_text= 'Pi Presents'
-
-
         self.root.title(self.title)
         self.root.iconname(self.icon_text)
         self.root.config(bg='black')
@@ -168,24 +171,27 @@ class PiPresents:
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
 
-        # set window dimensions
+        # set window dimensions and decorations
         if self.options['fullscreen']==True:
+            self.root.attributes('-fullscreen', True)
+            os.system('unclutter &')
             self.window_width=self.screen_width
             self.window_height=self.screen_height
             self.window_x=0
             self.window_y=0  
             self.root.geometry("%dx%d%+d%+d"  % (self.window_width,self.window_height,self.window_x,self.window_y))
-            self.root.attributes('-zoomed','1')
+            # self.root.attributes('-zoomed','1')
         else:
-            self.window_width=self.screen_width-self.window_width_shrink
-            self.window_height=self.screen_height-self.window_height_shrink
-            self.window_x=150
-            self.window_y=50  
+            self.window_width=int(self.screen_width*self.nonfull_window_width)
+            self.window_height=int(self.screen_height*self.nonfull_window_height)
+            self.window_x=self.nonfull_window_x
+            self.window_y=self.nonfull_window_y
             self.root.geometry("%dx%d%+d%+d" % (self.window_width,self.window_height,self.window_x,self.window_y))
+
             
         #canvas covers the whole window
-        self.canvas_height=self.window_height
-        self.canvas_width=self.window_width
+        self.canvas_height=self.screen_height
+        self.canvas_width=self.screen_width
         
         # make sure focus is set.
         self.root.focus_set()

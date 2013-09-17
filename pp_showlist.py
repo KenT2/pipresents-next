@@ -71,6 +71,14 @@ class ShowList:
         self._shows.append(copy.deepcopy(show_dict))
         self._num_shows+=1
 
+    def copy(self,show_dict,new_name):
+        show_to_copy=copy.deepcopy(show_dict)
+        show_to_copy['show-ref']=new_name
+        show_to_copy['title']=new_name
+        return show_to_copy
+
+    
+
     def remove(self,index):
         self._shows.pop(index)
         self._num_shows-=1

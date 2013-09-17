@@ -8,41 +8,77 @@ class PPdefinitions:
     # order of fields for editor display
     show_types={
     
-                'mediashow':[ 'type','title','show-ref', 'medialist','sep',
-                    'disable-controls','trigger','trigger-input','progress','trigger-next','next-input','sequence','repeat','repeat-interval','trigger-end','trigger-end-time','sep',
-                    'has-child', 'hint-text', 'hint-y','hint-font','hint-colour','sep',
-                   'show-text','show-text-font','show-text-colour','show-text-x','show-text-y','controls','sep','background-image','background-colour',
-                   'transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options'
-                              ],
+        'mediashow':[
+            'tab-show','sep',  
+                     'type','title','show-ref', 'medialist','trigger','trigger-input','progress','trigger-next','next-input','sequence','repeat','repeat-interval','trigger-end','trigger-end-time','sep',
+            'tab-child','sep',  
+                'has-child', 'hint-text', 'hint-y','hint-font','hint-colour',
+            'tab-show-text','sep',
+                   'show-text','show-text-font','show-text-colour','show-text-x','show-text-y',
+            'tab-tracks','sep',  
+                    'background-image','background-colour','transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options',
+            'tab-controls','sep',  
+                    'disable-controls', 'controls'
+            ],
                  
-                'menu':['type','title','show-ref','medialist','sep',
-                    'disable-controls','menu-x', 'menu-y', 'menu-spacing','timeout','has-background',
-                    'entry-font','entry-colour', 'entry-select-colour','sep',
-                    'hint-text', 'hint-y', 'hint-font', 'hint-colour','sep',
-                    'show-text','show-text-font','show-text-colour','show-text-x','show-text-y','controls','sep','background-image','background-colour',
-                    'transition','duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options'],
-               
-                'liveshow':[ 'type','title','show-ref', 'medialist','sep','disable-controls','trigger-start','trigger-start-time','trigger-end','trigger-end-time','sep',
-                    'has-child', 'hint-text', 'hint-y','hint-font','hint-colour','sep',
-                   'show-text','show-text-font','show-text-colour','show-text-x','show-text-y','controls','sep','background-image','background-colour',
-                   'transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options'
-                            ],
-                   
-                'hyperlinkshow':[ 'type','title','show-ref', 'medialist','sep',
-                    'links','first-track-ref','home-track-ref','timeout-track-ref','disable-controls','timeout',
-                    'sep', 'show-text','show-text-font','show-text-colour','show-text-x','show-text-y','controls','sep','background-image','background-colour',
-                                  'transition', 'duration','image-window',
-                     'audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options'
-                                ],
+        'menu':[
+            'tab-show','sep',  
+                'type','title','show-ref','medialist','menu-x', 'menu-y', 'menu-spacing','timeout','has-background','entry-font','entry-colour', 'entry-select-colour','sep',
+                    'hint-text', 'hint-y', 'hint-font', 'hint-colour',
+            'tab-show-text','sep',  
+                    'show-text','show-text-font','show-text-colour','show-text-x','show-text-y',
+            'tab-tracks','sep',  
+                    'background-image','background-colour','transition','duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options',
+            'tab-controls','sep',  
+               'disable-controls','controls'
+            ],
 
-                'radiobuttonshow':[ 'type','title','show-ref', 'medialist','sep',
-                    'links','first-track-ref','disable-controls','timeout',
-                    'sep', 'show-text','show-text-font','show-text-colour','show-text-x','show-text-y','controls','sep','background-image','background-colour',
-                                    'transition', 'duration','image-window',
-                     'audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options'
+        
+        'liveshow':[
+            'tab-show','sep',  
+                'type','title','show-ref', 'medialist','trigger-start','trigger-start-time','trigger-end','trigger-end-time',
+            'tab-child','sep',  
+                    'has-child', 'hint-text', 'hint-y','hint-font','hint-colour',
+            'tab-show-text','sep',
+                   'show-text','show-text-font','show-text-colour','show-text-x','show-text-y',
+            'tab-tracks','sep',  
+                'background-image','background-colour','transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options',
+            'tab-controls','sep',  
+                'disable-controls','controls'
+            ],
+        
+                   
+        'hyperlinkshow':[
+            'tab-show','sep',  
+                'type','title','show-ref','medialist','first-track-ref','home-track-ref','timeout','timeout-track-ref',            
+            'tab-show-text','sep',
+                'show-text','show-text-font','show-text-colour','show-text-x','show-text-y',
+            'tab-tracks','sep',  
+                'background-image','background-colour','transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options',
+            'tab-links','sep',
+                'links',
+            'tab-controls','sep',  
+                'disable-controls','controls'
+            ],
+        
+
+        'radiobuttonshow':[
+            'tab-show','sep',  
+                'type','title','show-ref','medialist','first-track-ref','timeout',
+            'tab-show-text','sep',
+                    'show-text','show-text-font','show-text-colour','show-text-x','show-text-y',
+            'tab-tracks','sep',  
+                'background-image','background-colour','transition', 'duration','image-window','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options','omx-audio','omx-volume','omx-window','omx-other-options',
+            'tab-links','sep',
+                'links',
+            'tab-controls','sep',  
+                'disable-controls','controls'
                     ],
               
-                'start':['type','title','show-ref','start-show']
+                'start':[
+                    'tab-show','sep',  
+                        'type','title','show-ref','start-show'
+                    ]
              }
 
 
@@ -97,14 +133,14 @@ class PPdefinitions:
                     'sep':{'shape':'sep'},
                     'audio-speaker':{'param':'audio-speaker','shape':'option-menu','text':'MPlayer Speaker','must':'no','read-only':'no',
                              'values':['left','right','stereo']},
-                    'background-colour':{'param':'background-colour','shape':'entry','text':'Background Colour','must':'no','read-only':'no'},
+                    'background-colour':{'param':'background-colour','shape':'colour','text':'Background Colour','must':'no','read-only':'no'},
                     'background-image':{'param':'background-image','shape':'browse','text':'Background Image','must':'no','read-only':'no'},
                     'controls':{'param':'controls','shape':'text','text':'Controls','must':'no','read-only':'no'},
                     'disable-controls':{'param':'disable-controls','shape':'option-menu','text':'Disable Controls ','must':'no','read-only':'no','values':['yes','no']},
                     'duration':{'param':'duration','shape':'entry','text':'Duration (secs)','must':'no','read-only':'no'},
-                    'entry-font':{'param':'entry-font','shape':'entry','text':'Entry Font','must':'no','read-only':'no'},
-                    'entry-colour':{'param':'entry-colour','shape':'entry','text':'Entry Colour','must':'no','read-only':'no'},
-                    'entry-select-colour':{'param':'entry-select-colour','shape':'entry','text':'Selected Entry Colour','must':'no','read-only':'no'},
+                    'entry-font':{'param':'entry-font','shape':'font','text':'Entry Font','must':'no','read-only':'no'},
+                    'entry-colour':{'param':'entry-colour','shape':'colour','text':'Entry Colour','must':'no','read-only':'no'},
+                    'entry-select-colour':{'param':'entry-select-colour','shape':'colour','text':'Selected Entry Colour','must':'no','read-only':'no'},
                     'timeout-track-ref':{'param':'timeout-track-ref','shape':'entry','text':'Timeout Track','must':'no','read-only':'no'},
                     'first-track-ref':{'param':'first-track-ref','shape':'entry','text':'First Track','must':'no','read-only':'no'},
                     'has-child':{'param':'has-child','shape':'option-menu','text':'Has Child','must':'no','read-only':'no',
@@ -112,8 +148,8 @@ class PPdefinitions:
                     'has-background':{'param':'has-background','shape':'option-menu','text':'Has Background Image','must':'no','read-only':'no','values':['yes','no']},
                     'hint-text':{'param':'hint-text','shape':'entry','text':'Hint Text','must':'no','read-only':'no'},
                     'hint-y':{'param':'hint-y','shape':'entry','text':'Hint y from bottom','must':'no','read-only':'no'},
-                    'hint-font':{'param':'hint-font','shape':'entry','text':'Hint Font','must':'no','read-only':'no'},
-                    'hint-colour':{'param':'hint-colour','shape':'entry','text':'Hint Colour','must':'no','read-only':'no'},
+                    'hint-font':{'param':'hint-font','shape':'font','text':'Hint Font','must':'no','read-only':'no'},
+                    'hint-colour':{'param':'hint-colour','shape':'colour','text':'Hint Colour','must':'no','read-only':'no'},
                     'home-track-ref':{'param':'home-track-ref','shape':'entry','text':'Home Track','must':'no','read-only':'no'},
                     'image-window':{'param':'image-window','shape':'entry','text':'Image Window','must':'no','read-only':'no'},
                     'links':{'param':'links','shape':'text','text':'Links','must':'no','read-only':'no'},
@@ -121,8 +157,8 @@ class PPdefinitions:
                     'menu-x':{'param':'menu-x','shape':'entry','text':'Menu x Position','must':'no','read-only':'no'},
                     'menu-y':{'param':'menu-y','shape':'entry','text':'Menu y Position','must':'no','read-only':'no'},
                     'menu-spacing':{'param':'menu-spacing','shape':'entry','text':'Entry Spacing','must':'no','read-only':'no'},
-                    'message-font':{'param':'message-font','shape':'entry','text':'Text Font','must':'yes','read-only':'no'},
-                    'message-colour':{'param':'message-colour','shape':'entry','text':'Text Colour','must':'yes','read-only':'no'},
+                    'message-font':{'param':'message-font','shape':'font','text':'Text Font','must':'yes','read-only':'no'},
+                    'message-colour':{'param':'message-colour','shape':'colour','text':'Text Colour','must':'yes','read-only':'no'},
                     'mplayer-audio':{'param':'mplayer-audio','shape':'option-menu','text':'MPlayer Audio','must':'no','read-only':'no',
                                        'values':['hdmi','local']},
                     'mplayer-other-options':{'param':'mplayer-other-options','shape':'entry','text':'Other MPlayer Options','must':'no','read-only':'no'},
@@ -144,11 +180,19 @@ class PPdefinitions:
                                         'values':['ordered','shuffle']},
                     'show-ref':{'param':'show-ref','shape':'entry','text':'Show Reference','must':'no','read-only':'no'},
                     'show-text':{'param':'show-text','shape':'text','text':'Show Text','must':'no','read-only':'no'},
-                    'show-text-font':{'param':'show-text-font','shape':'entry','text':'Show Text Font','must':'no','read-only':'no'},
-                    'show-text-colour':{'param':'show-text-colour','shape':'entry','text':'Show Text Colour','must':'no','read-only':'no'},
+                    'show-text-font':{'param':'show-text-font','shape':'font','text':'Show Text Font','must':'no','read-only':'no'},
+                    'show-text-colour':{'param':'show-text-colour','shape':'colour','text':'Show Text Colour','must':'no','read-only':'no'},
                     'show-text-x':{'param':'show-text-x','shape':'entry','text':'Show Text x Position','must':'no','read-only':'no'},
                     'show-text-y':{'param':'show-text-y','shape':'entry','text':'Show Text y Position','must':'no','read-only':'no'},
                     'start-show':{'param':'start-show','shape':'entry','text':'Start Shows','must':'no','read-only':'no'},
+                    'tab-animation':{'shape':'tab','name':'animation','text':'Animation'},
+                    'tab-child':{'shape':'tab','name':'child','text':'Child Show'},
+                    'tab-controls':{'shape':'tab','name':'controls','text':'Controls'},
+                    'tab-links':{'shape':'tab','name':'links','text':'Links'},
+                    'tab-show':{'shape':'tab','name':'show','text':'Show'},
+                    'tab-show-text':{'shape':'tab','name':'show-text','text':'Show Text'},
+                    'tab-track':{'shape':'tab','name':'track','text':'Track'},
+                    'tab-tracks':{'shape':'tab','name':'tracks','text':'Track Defaults'},
                     'text':{'param':'text','shape':'text','text':'Message Text','must':'no','read-only':'no'},
                     'timeout':{'param':'timeout','shape':'entry','text':'Timeout (secs)','must':'no','read-only':'no'},
                     'title':{'param':'title','shape':'entry','text':'Title','must':'no','read-only':'no'},
@@ -166,22 +210,70 @@ class PPdefinitions:
                           }
 
     track_types={
-                'video':['type','title','track-ref','location','omx-audio','omx-volume','omx-window','background-colour','background-image','track-text','track-text-font','track-text-colour','track-text-x','track-text-y','links','sep','show-control-begin','show-control-end','animate-begin','animate-clear','animate-end'],
+        'video':[
+            'tab-track','sep',  
+                    'type','title','track-ref','location','omx-audio','omx-volume','omx-window','background-colour','background-image',
+            'tab-track-text','sep',
+                'track-text','track-text-font','track-text-colour','track-text-x','track-text-y',
+            'tab-links','sep',
+                'links',
+            'tab-show-control','sep',
+                'show-control-begin','show-control-end',
+            'tab-animate','sep',
+                'animate-begin','animate-clear','animate-end'
+            ],
                 
-                'message':['type','title','track-ref','text','duration','message-font','message-colour','message-justify','message-x','message-y','background-colour','background-image','links','sep','show-control-begin','show-control-end','animate-begin','animate-clear','animate-end'],
+        'message':[
+            'tab-track','sep',  
+                'type','title','track-ref','text','duration','message-font','message-colour','message-justify','message-x','message-y','background-colour','background-image',
+            'tab-links','sep',
+                'links',
+            'tab-show-control','sep',
+                'show-control-begin','show-control-end',
+            'tab-animate','sep',
+                'animate-begin','animate-clear','animate-end'
+            ],
+        
                 
-                'show':['type','title','track-ref','sub-show'],
-                
-                'control':['type','title','track-ref','show-control-begin','clear-screen','animate-begin'],
-                
-                'image':['type','title','track-ref','location','duration','transition','image-window','background-colour','background-image','track-text','track-text-font','track-text-colour','track-text-x','track-text-y','links','sep','show-control-begin','show-control-end','animate-begin','animate-clear','animate-end'],
+        'show':[
+            'tab-track','sep',  
+                'type','title','track-ref','sub-show'
+            ],
+        
+                 
+        'image':[
+            'tab-track','sep',  
+                'type','title','track-ref','location','duration','transition','image-window','background-colour','background-image',
+            'tab-track-text','sep',
+                'track-text','track-text-font','track-text-colour','track-text-x','track-text-y',
+            'tab-links','sep',
+                'links',
+            'tab-show-control','sep',
+                'show-control-begin','show-control-end',
+            'tab-animate','sep',
+                'animate-begin','animate-clear','animate-end'
+            ],
+
                        
-                'audio':['type','title','track-ref','location','duration','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options',
-                       'clear-screen','background-colour','background-image','track-text','track-text-font','track-text-colour','track-text-x','track-text-y','links','sep','show-control-begin','show-control-end','animate-begin','animate-clear','animate-end'],
+        'audio':[
+            'tab-track','sep',  
+                'type','title','track-ref','location','duration','audio-speaker','mplayer-audio','mplayer-volume','mplayer-other-options',
+                       'clear-screen','background-colour','background-image',
+            'tab-track-text','sep',
+                 'track-text','track-text-font','track-text-colour','track-text-x','track-text-y',
+            'tab-links','sep',
+                 'links',
+            'tab-show-control','sep',
+                 'show-control-begin','show-control-end',
+            'tab-animate','sep',
+                 'animate-begin','animate-clear','animate-end'
+                 ],
+
                        
-                'page':['type','title','track-ref','sep','text','message-font','message-colour','message-justify','background-colour','background-image','links','sep','show-control-begin','show-control-end','animate-begin','animate-clear','animate-end'],
-                
-                'menu-background':['type','title','track-ref','location']
+        'menu-background':[
+            'tab-track','sep',  
+                'type','title','track-ref','location'
+            ]
                          }                   
 
     new_tracks={
@@ -194,8 +286,6 @@ class PPdefinitions:
                 
                 'show':{'title':'New Show','track-ref':'','type':'show','sub-show':''},   
                 
-                'control':{'type':'control','title':'New Control','track-ref':'','show-control-begin':'','clear-screen':'no','animate-begin':''},     
-                
                 'image':{'title':'New Image','track-ref':'','type':'image','location':'','duration':'','transition':'','image-window':'','background-colour':'','background-image':'','track-text':'','track-text-font':'',
                        'track-text-colour':'','track-text-x':'0','track-text-y':'0','links':'','show-control-begin':'','show-control-end':'','animate-begin':'','animate-clear':'no','animate-end':''},
                        
@@ -204,9 +294,6 @@ class PPdefinitions:
                 
                 'menu-background':{'title':'New Menu Background','track-ref':'pp-menu-background','type':'menu-background','location':''},
                 
-                'page':{'title':'New Page','track-ref':'','type':'page','links':'','text':'','message-font':'Helvetica 30 bold','message-colour':'white','message-justify':'left','background-colour':'','background-image':'',
-                        'show-control-begin':'','show-control-end':'','animate-begin':'','animate-clear':'no','animate-end':''},
-                        
                 'child-show': {'title':'New Child Show','track-ref':'pp-child-show','type':'show','sub-show':''}
                          }
 
@@ -220,15 +307,15 @@ class PPdefinitions:
                             'audio-speaker':{'param':'audio-speaker','shape':'option-menu','text':'MPlayer Speaker','must':'no','read-only':'no',
                                        'values':['left','right','stereo','']},
                             'background-image':{'param':'background-image','shape':'browse','text':'Background Image','must':'no','read-only':'no'},
-                            'background-colour':{'param':'background-colour','shape':'entry','text':'Background Colour','must':'no','read-only':'no'},
+                            'background-colour':{'param':'background-colour','shape':'colour','text':'Background Colour','must':'no','read-only':'no'},
                             'clear-screen':{'param':'clear-screen','shape':'option-menu','text':'Clear Screen','must':'no','read-only':'no',
                                        'values':['yes','no']},
                             'duration':{'param':'duration','shape':'entry','text':'Duration (secs)','must':'no','read-only':'no'},
                             'image-window':{'param':'image-window','shape':'entry','text':'Image Window','must':'no','read-only':'no'},
                             'location':{'param':'location','shape':'browse','text':'Location','must':'no','read-only':'no'},
                             'links':{'param':'links','shape':'text','text':'Links','must':'no','read-only':'no'},
-                            'message-font':{'param':'message-font','shape':'entry','text':'Text Font','must':'no','read-only':'no'},
-                            'message-colour':{'param':'message-colour','shape':'entry','text':'Text Colour','must':'no','read-only':'no'},
+                            'message-font':{'param':'message-font','shape':'font','text':'Text Font','must':'no','read-only':'no'},
+                            'message-colour':{'param':'message-colour','shape':'colour','text':'Text Colour','must':'no','read-only':'no'},
                             'message-justify':{'param':'message-justify','shape':'option-menu','text':'Justification','must':'no','read-only':'no',
                                        'values':['left','center','right']},
                             'message-x':{'param':'message-x','shape':'entry','text':'Message x Position','must':'no','read-only':'no'},
@@ -246,12 +333,18 @@ class PPdefinitions:
                             'show-control-begin':{'param':'show-control-begin','shape':'text','text':'Show Control at Beginning','must':'no','read-only':'no'},
                             'show-control-end':{'param':'show-control-end','shape':'text','text':'Show Control at End','must':'no','read-only':'no'},
                             'sub-show':{'param':'sub-show','shape':'option-menu','text':'Show to Run','must':'no','read-only':'no'},
+
+                            'tab-animate':{'shape':'tab','name':'animate','text':'Animation'},
+                            'tab-show-control':{'shape':'tab','name':'show-control','text':'Show Control'},
+                            'tab-links':{'shape':'tab','name':'links','text':'Links'},
+                            'tab-track-text':{'shape':'tab','name':'track-text','text':'Track Text'},
+                            'tab-track':{'shape':'tab','name':'track','text':'Track'},
                             'text':{'param':'text','shape':'text','text':'Message Text','must':'no','read-only':'no'},
                             'title':{'param':'title','shape':'entry','text':'Title','must':'no','read-only':'no'},
                             'track-ref':{'param':'track-ref','shape':'entry','text':'Track Reference','must':'no','read-only':'no'},
                             'track-text':{'param':'track-text','shape':'text','text':'Track Text','must':'no','read-only':'no'},
                             'track-text-font':{'param':'track-text-font','shape':'entry','text':'Track Text Font','must':'no','read-only':'no'},
-                            'track-text-colour':{'param':'track-text-colour','shape':'entry','text':'Track Text Colour','must':'no','read-only':'no'},
+                            'track-text-colour':{'param':'track-text-colour','shape':'colour','text':'Track Text Colour','must':'no','read-only':'no'},
                             'track-text-x':{'param':'track-text-x','shape':'entry','text':'Track Text x Position','must':'no','read-only':'no'},
                             'track-text-y':{'param':'track-text-y','shape':'entry','text':'Track Text y Position','must':'no','read-only':'no'},
                             'transition':{'param':'transition','shape':'option-menu','text':'Transition','must':'no','read-only':'no','values':['cut','']},

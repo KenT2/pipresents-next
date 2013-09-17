@@ -15,7 +15,7 @@ import json
 import copy
 import string
 
-
+from pp_edititem import EditItem
 from pp_medialist import MediaList
 from pp_showlist import ShowList
 from pp_utils import Monitor
@@ -108,6 +108,7 @@ class PPEditor:
         showmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         showmenu.add_command(label='Delete', command = self.remove_show)
         showmenu.add_command(label='Edit', command = self.m_edit_show)
+        showmenu.add_command(label='Copy To', command = self.copy_show)
         menubar.add_cascade(label='Show', menu = showmenu)
 
         stypemenu = Menu(showmenu, tearoff=0, bg="grey", fg="black")
@@ -296,7 +297,8 @@ class PPEditor:
 
     def about (self):
         tkMessageBox.showinfo("About","Editor for Pi Presents Profiles\n"
-                   +"For profile version: " + self.editor_issue + "\nAuthor: Ken Thompson  - KenT")
+                   +"For profile version: " + self.editor_issue + "\nAuthor: Ken Thompson"+
+                              "\nWebsite: http://pipresents.wordpress.com/")
 
     def validate_profile(self):
         val =Validator()
@@ -314,7 +316,7 @@ class PPEditor:
             self.mon.err(self,"Home directory not found: " + initial_dir + "\n\nHint: Data Home option must end in pp_home")
             return
         dir_path=tkFileDialog.askdirectory(initialdir=initial_dir)
-        # dir_path="C:\Users\Ken\pp_home\pp_profiles\\trigger_test"
+        # dir_path="C:\Users\Ken\pp_home\pp_profiles\\ttt"
         if len(dir_path)>0:
             self.open_profile(dir_path)
         
@@ -335,23 +337,19 @@ class PPEditor:
 
     def new_profile(self,profile):
         d = Edit1Dialog(self.root,"New Profile","Name", "")
-        if d != None:
-            name=str(d.result)
-            if name=="":
-                tkMessageBox.showwarning(
-                                "New Profile",
-                                "Name is blank"
-                                        )
-                return
-            to = self.pp_home_dir + os.sep + "pp_profiles"+ os.sep + name
-            if os.path.exists(to)== False:
-                shutil.copytree(profile, to, symlinks=False, ignore=None)
-                self.open_profile(to)
-            else:
-                tkMessageBox.showwarning(
-                                "New Profile",
-                                "Profile exists\n(%s)" % to
-                                        )
+        if d .result == None:
+            return
+        name=str(d.result)
+        if name=="":
+            tkMessageBox.showwarning("New Profile","Name is blank")
+            return
+        to = self.pp_home_dir + os.sep + "pp_profiles"+ os.sep + name
+        if os.path.exists(to)== True:
+            tkMessageBox.showwarning( "New Profile","Profile exists\n(%s)" % to )
+            return
+        shutil.copytree(profile, to, symlinks=False, ignore=None)
+        self.open_profile(to)
+
 
         
     def new_exhibit_profile(self):
@@ -390,98 +388,6 @@ class PPEditor:
         profile = self.pp_dir+"/pp_home/pp_profiles/ppt_hyperlinkshow"
         self.new_profile(profile)
 
-# *********************************************
-# update profile
-# **********************************************
-
-    def update_all(self):
-        self.init()
-        for profile_file in os.listdir(self.pp_home_dir+os.sep+'pp_profiles'):
-            # self.mon.log (self,"Updating "+profile_file)
-            self.pp_profile_dir = self.pp_home_dir+os.sep+'pp_profiles'+ os.sep + profile_file
-            if not os.path.exists(self.pp_profile_dir+os.sep+"pp_showlist.json"):
-                tkMessageBox.showwarning("Pi Presents","Not a profile, skipping "+self.pp_profile_dir)
-            else:
-                self.current_showlist=ShowList()
-                #self.mon.log (self,"Checking version "+profile_file)
-                self.current_showlist.open_json(self.pp_profile_dir+os.sep+"pp_showlist.json")
-                if float(self.current_showlist.sissue())<float(self.editor_issue):
-                    self.mon.log(self,"Version of profile "+profile_file+ "  is being updated to "+self.editor_issue)
-                    self.update_profile()
-                elif (self.command_options['forceupdate'] == True and float(self.current_showlist.sissue())==float(self.editor_issue)):
-                    self.mon.log(self, "Forced updating of " + profile_file + ' to '+self.editor_issue)
-                    self.update_profile()
-                elif float(self.current_showlist.sissue())>float(self.editor_issue):
-                    tkMessageBox.showwarning("Pi Presents", "Version of profile " +profile_file+ " is greater than editor, skipping")
-                else:
-                    self.mon.log(self," Profile " + profile_file + " Already up to date ")
-        self.init()
-        tkMessageBox.showwarning("Pi Presents","All profiles updated")
-            
-    def update_profile(self):
-        #open showlist and update its shows
-        # self.mon.log (self,"Updating show ")
-        ifile  = open(self.pp_profile_dir + os.sep + "pp_showlist.json", 'rb')
-        shows = json.load(ifile)['shows']
-        ifile.close()
-        replacement_shows=self.update_shows(shows)
-        dic={'issue':self.editor_issue,'shows':replacement_shows}
-        ofile  = open(self.pp_profile_dir + os.sep + "pp_showlist.json", "wb")
-        json.dump(dic,ofile,sort_keys=True,indent=1)
-
-        
-        # UPDATE MEDIALISTS AND THEIR TRACKS
-        for file in os.listdir(self.pp_profile_dir):
-            if file.endswith(".json") and file<>'pp_showlist.json':
-                # self.mon.log (self,"Updating medialist " + file)
-                #open a medialist and update its tracks
-                ifile  = open(self.pp_profile_dir + os.sep + file, 'rb')
-                tracks = json.load(ifile)['tracks']
-                ifile.close()
-                replacement_tracks=self.update_tracks(tracks)
-                dic={'issue':self.editor_issue,'tracks':replacement_tracks}
-                ofile  = open(self.pp_profile_dir + os.sep + file, "wb")
-                json.dump(dic,ofile,sort_keys=True,indent=1)
-
-
-    def update_tracks(self,old_tracks):
-        # get correct spec from type of field
-        replacement_tracks=[]
-        for old_track in old_tracks:
-            #print '\nold track ',old_track
-            track_type=old_track['type']
-            spec_fields=PPdefinitions.new_tracks[track_type]
-            left_overs=dict()
-            # go through track and delete fields not in spec
-            for key in old_track.keys():
-                if key in spec_fields:
-                        left_overs[key]=old_track[key]
-            #print '\n leftovers',left_overs
-            replacement_track=copy.deepcopy(PPdefinitions.new_tracks[track_type])
-            #print '\n before update', replacement_track
-            replacement_track.update(left_overs)
-            #print '\nafter update',replacement_track
-            replacement_tracks.append(copy.deepcopy(replacement_track))
-        return replacement_tracks
-
-
-    def update_shows(self,old_shows):
-        # get correct spec from type of field
-        replacement_shows=[]
-        for old_show in old_shows:
-            show_type=old_show['type']
-            spec_fields=PPdefinitions.new_shows[show_type]
-            left_overs=dict()
-            # go through track and delete fields not in spec
-            for key in old_show.keys():
-                if key in spec_fields:
-                        left_overs[key]=old_show[key]
-            # print '\n leftovers',left_overs
-            replacement_show=copy.deepcopy(PPdefinitions.new_shows[show_type])
-            replacement_show.update(left_overs)
-            replacement_shows.append(copy.deepcopy(replacement_show))
-        return replacement_shows                
-            
 # ***************************************
 # Shows
 # ***************************************
@@ -530,14 +436,36 @@ class PPEditor:
     def add_start(self):  
         self.add_show(PPdefinitions.new_shows['start'])
 
+
     def add_show(self,default):
-        # append it to the showlist
+        # append it to the showlist and then add the medialist
         if self.current_showlist<>None:
-            self.current_showlist.append(default)
+            d = Edit1Dialog(self.root,"AddShow",
+                                "Show Reference", "")
+            if d.result == None:
+                return
+            name=str(d.result)
+            if name=="":
+                tkMessageBox.showwarning(
+                                "Add Show",
+                                "Name is blank"
+                                        )
+                return
+            if self.current_showlist.index_of_show(name)<>-1:
+                tkMessageBox.showwarning(
+                                "Add Show",
+                                "A Show with this name already exists"
+                                        )
+                return            
+            copied_show=self.current_showlist.copy(default,name)
+            mediafile=self.add_medialist(name)
+            if mediafile<>'':
+                copied_show['medialist']=mediafile
+            self.current_showlist.append(copied_show)
             self.save_showlist(self.pp_profile_dir)
             self.refresh_shows_display()
 
-
+            
     def remove_show(self):
         if  self.current_showlist<>None and self.current_showlist.length()>0 and self.current_showlist.show_is_selected():
             if tkMessageBox.askokcancel("Delete Show","Delete Show"):
@@ -568,12 +496,20 @@ class PPEditor:
             self.current_showlist.select(mouse_item_index)
             self.refresh_shows_display()
 
+    def copy_show(self):
+        if  self.current_showlist<>None and self.current_showlist.show_is_selected():
+            self.add_show(self.current_showlist.selected_show())
+
+        
     def m_edit_show(self):
         self.edit_show(PPdefinitions.show_types,PPdefinitions.show_field_specs)
+        
+     
 
     def edit_show(self,show_types,field_specs):
         if self.current_showlist<>None and self.current_showlist.show_is_selected():
-            d=EditItemDialog(self.root,"Edit Show",self.current_showlist.selected_show(),show_types,field_specs,self.show_refs())
+            d=EditItem(self.root,"Edit Show",self.current_showlist.selected_show(),show_types,field_specs,self.show_refs(),
+                       self.initial_media_dir,self.pp_home_dir,'show')
             if d.result == True:
 
                 self.save_showlist(self.pp_profile_dir)
@@ -597,40 +533,41 @@ class PPEditor:
         self.current_medialist=None
 
 
-    def add_medialist(self):
-        d = Edit1Dialog(self.root,"Add Medialist",
-                                "File", "")
-        if d != None:
+    def add_medialist(self,name=None):
+        if name==None:
+            d = Edit1Dialog(self.root,"Add Medialist",
+                                    "File", "")
+            if d.result == None:
+                return ''
             name=str(d.result)
             if name=="":
                 tkMessageBox.showwarning(
-                                "Add medialist",
-                                "Name is blank"
-                                        )
-                return
-            if not name.endswith(".json"):
-                name=name+(".json")
-            path = self.pp_profile_dir + os.sep + name
-            if os.path.exists(path)== False:
-                nfile = open(path,'wb')
-                nfile.write("{")
-                nfile.write("\"issue\":  \""+self.editor_issue+"\",\n")
-                nfile.write("\"tracks\": [")
-                nfile.write("]")
-                nfile.write("}")
-                nfile.close()
-                # append it to the list
-                self.medialists.append(copy.deepcopy(name))
-                # add title to medialists display
-                self.medialists_display.insert(END, name)  
-                # and set it as the selected medialist
-                self.refresh_medialists_display()
-            else:
-                tkMessageBox.showwarning(
-                                "Add medialist",
-                                "Medialist file exists\n(%s)" % path
-                                        )
-                        
+                                    "Add medialist",
+                                    "Name is blank"
+                                            )
+                return ''
+            
+        if not name.endswith(".json"):
+            name=name+(".json")
+                
+        path = self.pp_profile_dir + os.sep + name
+        if os.path.exists(path)== True:
+                tkMessageBox.showwarning("Add medialist","Medialist file exists\n(%s)" % path)
+                return ''
+        nfile = open(path,'wb')
+        nfile.write("{")
+        nfile.write("\"issue\":  \""+self.editor_issue+"\",\n")
+        nfile.write("\"tracks\": [")
+        nfile.write("]")
+        nfile.write("}")
+        nfile.close()
+        # append it to the list
+        self.medialists.append(copy.deepcopy(name))
+        # add title to medialists display
+        self.medialists_display.insert(END, name)  
+        # and set it as the selected medialist
+        self.refresh_medialists_display()
+        return name
 
 
     def remove_medialist(self):
@@ -702,7 +639,8 @@ class PPEditor:
 
     def edit_track(self,track_types,field_specs):      
         if self.current_medialist<>None and self.current_medialist.track_is_selected():
-            d=EditItemDialog(self.root,"Edit Track",self.current_medialist.selected_track(),track_types,field_specs,self.show_refs())
+            d=EditItem(self.root,"Edit Track",self.current_medialist.selected_track(),track_types,field_specs,self.show_refs(),
+                       self.initial_media_dir,self.pp_home_dir,'track')
             if d.result == True:
                 self.save_medialist()
             self.refresh_tracks_display()
@@ -823,6 +761,101 @@ class PPEditor:
             self.new_track(PPdefinitions.new_tracks['audio'],{'title':title,'track-ref':'','location':location,'mplayer-audio':'','audiospeaker':''})
         else:
             self.mon.err(self,afile + " - file extension not recognised")
+
+
+
+# *********************************************
+# update profile
+# **********************************************
+
+    def update_all(self):
+        self.init()
+        for profile_file in os.listdir(self.pp_home_dir+os.sep+'pp_profiles'):
+            # self.mon.log (self,"Updating "+profile_file)
+            self.pp_profile_dir = self.pp_home_dir+os.sep+'pp_profiles'+ os.sep + profile_file
+            if not os.path.exists(self.pp_profile_dir+os.sep+"pp_showlist.json"):
+                tkMessageBox.showwarning("Pi Presents","Not a profile, skipping "+self.pp_profile_dir)
+            else:
+                self.current_showlist=ShowList()
+                #self.mon.log (self,"Checking version "+profile_file)
+                self.current_showlist.open_json(self.pp_profile_dir+os.sep+"pp_showlist.json")
+                if float(self.current_showlist.sissue())<float(self.editor_issue):
+                    self.mon.log(self,"Version of profile "+profile_file+ "  is being updated to "+self.editor_issue)
+                    self.update_profile()
+                elif (self.command_options['forceupdate'] == True and float(self.current_showlist.sissue())==float(self.editor_issue)):
+                    self.mon.log(self, "Forced updating of " + profile_file + ' to '+self.editor_issue)
+                    self.update_profile()
+                elif float(self.current_showlist.sissue())>float(self.editor_issue):
+                    tkMessageBox.showwarning("Pi Presents", "Version of profile " +profile_file+ " is greater than editor, skipping")
+                else:
+                    self.mon.log(self," Profile " + profile_file + " Already up to date ")
+        self.init()
+        tkMessageBox.showwarning("Pi Presents","All profiles updated")
+            
+    def update_profile(self):
+        #open showlist and update its shows
+        # self.mon.log (self,"Updating show ")
+        ifile  = open(self.pp_profile_dir + os.sep + "pp_showlist.json", 'rb')
+        shows = json.load(ifile)['shows']
+        ifile.close()
+        replacement_shows=self.update_shows(shows)
+        dic={'issue':self.editor_issue,'shows':replacement_shows}
+        ofile  = open(self.pp_profile_dir + os.sep + "pp_showlist.json", "wb")
+        json.dump(dic,ofile,sort_keys=True,indent=1)
+
+        
+        # UPDATE MEDIALISTS AND THEIR TRACKS
+        for file in os.listdir(self.pp_profile_dir):
+            if file.endswith(".json") and file<>'pp_showlist.json':
+                # self.mon.log (self,"Updating medialist " + file)
+                #open a medialist and update its tracks
+                ifile  = open(self.pp_profile_dir + os.sep + file, 'rb')
+                tracks = json.load(ifile)['tracks']
+                ifile.close()
+                replacement_tracks=self.update_tracks(tracks)
+                dic={'issue':self.editor_issue,'tracks':replacement_tracks}
+                ofile  = open(self.pp_profile_dir + os.sep + file, "wb")
+                json.dump(dic,ofile,sort_keys=True,indent=1)
+
+
+    def update_tracks(self,old_tracks):
+        # get correct spec from type of field
+        replacement_tracks=[]
+        for old_track in old_tracks:
+            #print '\nold track ',old_track
+            track_type=old_track['type']
+            spec_fields=PPdefinitions.new_tracks[track_type]
+            left_overs=dict()
+            # go through track and delete fields not in spec
+            for key in old_track.keys():
+                if key in spec_fields:
+                        left_overs[key]=old_track[key]
+            #print '\n leftovers',left_overs
+            replacement_track=copy.deepcopy(PPdefinitions.new_tracks[track_type])
+            #print '\n before update', replacement_track
+            replacement_track.update(left_overs)
+            #print '\nafter update',replacement_track
+            replacement_tracks.append(copy.deepcopy(replacement_track))
+        return replacement_tracks
+
+
+    def update_shows(self,old_shows):
+        # get correct spec from type of field
+        replacement_shows=[]
+        for old_show in old_shows:
+            show_type=old_show['type']
+            spec_fields=PPdefinitions.new_shows[show_type]
+            left_overs=dict()
+            # go through track and delete fields not in spec
+            for key in old_show.keys():
+                if key in spec_fields:
+                        left_overs[key]=old_show[key]
+            # print '\n leftovers',left_overs
+            replacement_show=copy.deepcopy(PPdefinitions.new_shows[show_type])
+            replacement_show.update(left_overs)
+            replacement_shows.append(copy.deepcopy(replacement_show))
+        return replacement_shows                
+            
 
  
 # *************************************
@@ -955,173 +988,6 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
     
-
-
-# *************************************
-# EDIT SHOW AND TRACK CONTENT
-# ************************************
-
-class EditItemDialog(tkSimpleDialog.Dialog):
-
-    def __init__(self, parent, title, tp, track_types,field_specs,show_refs):
-        self.mon=Monitor()
-        self.mon.on()
-        #save the extra arg to instance variable
-        self.tp = tp   # dictionary - the track parameters to be edited
-        self.track_types= track_types
-        self.field_specs=field_specs
-        self.show_refs=show_refs
-        self.show_refs.append('')
-        # list of stringvars from which to get edited values
-        self.entries=[]
-
-        #and call the base class _init_which calls body immeadiately and apply on OK pressed
-        tkSimpleDialog.Dialog.__init__(self, parent, title)
-
-    def body(self,root):
-        self.canvas = Canvas(root, borderwidth=1)
-        self.frame = Frame(self.canvas,relief=RIDGE,borderwidth=2,padx=5,pady=5)
-        self.vsb = Scrollbar(root, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=self.vsb.set)
-
-        self.vsb.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.canvas.create_window((4,4), window=self.frame, anchor="nw", 
-                                  tags="self.frame")
-
-        self.frame.bind("<Configure>", self.OnFrameConfigure)
-
-        self.body_fields(self.frame)
-
-
-    def OnFrameConfigure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        dimensions=self.canvas.bbox("all")
-        fields_height=dimensions[3]
-        max_height=500
-        height=min([fields_height,max_height])
-        self.canvas.configure(scrollregion=dimensions,width=dimensions[2],height=height)
-        
-  
-    def body_fields(self, master):
-        #Label(master,text='Field', anchor=W).grid(row=0,column=0)
-        #Label(master,text='Value', anchor=W).grid(row=0,column=1)
-        # get fields for this type of track               }
-        track_fields=self.track_types[self.tp['type']]
-        # populate the dialog box
-        row=1
-        self.fields=[]
-        self.entries=[]
-        for field in track_fields:
-            values=[]
-            if self.field_specs[field]['shape']in("option-menu",'spinbox'):
-                if self.field_specs[field]['param']in ('sub-show','start-show','controlled-show'):
-                    values=self.show_refs                    
-                else:
-                    values=self.field_specs[field]['values']
-            else:
-                values=[]
-            obj=self.make_entry(master,self.field_specs[field],row,values)
-            if obj<>None: self.fields.append(obj)
-            row +=1
-        return None # No initial focus
-
-
-    def buttonbox(self):
-        '''add modified button box.
-        override standard one to get rid of key bindings which cause trouble with text widget
-        '''
-
-        box = Frame(self)
-        w = Button(box, text="OK", width=10, command=self.ok, default=ACTIVE)
-        w.pack(side=LEFT, padx=5, pady=5)
-        w = Button(box, text="Cancel", width=10, command=self.cancel)
-        w.pack(side=LEFT, padx=5, pady=5)
-        #self.bind("<Return>", self.ok)
-        #self.bind("<Escape>", self.cancel)
-        box.pack()
-
-
-
-    # create an entry in a dialog box
-    def make_entry(self,master,field,row,values):
-        if field['shape']=="sep":
-            Label(master,text='', anchor=W).grid(row=row,column=0,sticky=W)
-            return None
-        else:
-            parameter=field['param']
-            if not parameter in self.tp:
-                self.mon.log(self,"Value for field not found in opened file: " + parameter)
-                return None
-            else:
-                if field['must']=='yes':
-                    bg='pink'
-                else:
-                    bg='white'
-                Label(master,text=field['text'], anchor=W).grid(row=row,column=0,sticky=W)
-                if field['shape']=="entry":
-                    obj=Entry(master,bg=bg,width=40,font='arial 11')
-                    obj.insert(END,self.tp[field['param']])
-                elif field['shape']in("text",'csv'):
-                    obj=Text(master,bg=bg,height=8,width=40,font='arial 11')
-                    obj.insert(END,self.tp[field['param']])
-                elif field['shape']=='spinbox':
-                    obj=Spinbox(master,bg=bg,values=values,wrap=True)
-                    obj.insert(END,self.tp[field['param']])
-                elif field['shape']=="browse":
-                    obj=Entry(master,bg=bg,width=40)
-                    obj.insert(END,self.tp[field['param']])
-                elif field['shape']=='option-menu': 
-                    self.option_val = StringVar(master)    
-                    self.option_val.set(self.tp[field['param']])
-                    obj = apply(OptionMenu, [master, self.option_val] + values)
-                    self.entries.append(self.option_val)
-                    #obj = OptionMenu(master, self.option_val, values)
-                else:
-                    pass
-                obj.grid(row=row,column=1,sticky=W)
-                if field['read-only']=='yes':
-                    obj.config(state="readonly")
-               # Label(master,text='  ', anchor=W).grid(row=row,column=2,sticky=W)
-                return obj
-
-
-    def apply(self):
-        track_fields=self.track_types[self.tp['type']]
-        row=0
-        entry_index=0
-        for field in track_fields:
-            field_spec=self.field_specs[field]
-            if field_spec['shape']<>'sep':
-                if field_spec['shape']=='text':
-                    self.tp[field_spec['param']]=self.fields[row].get(1.0,END).rstrip('\n')
-                elif field_spec['shape']=='option-menu':
-                    self.tp[field_spec['param']]=self.entries[entry_index].get()
-                    entry_index+=1
-                else:
-                    self.tp[field_spec['param']]=self.fields[row].get().strip()
-                row +=1
-        self.result=True
-        return self.result
- 
-# animation stuff, not used
- 
-    def parse_animate(self,text):
-        lines  = int(text.index('end').split('.')[0]) - 1  # returns line count
-        #print lines
-        for line in range(lines):
-            pass
-            #print self.text_eol(line)
-            #print "text", text.get(self.text_index(line,0),self.text_eol(line))
-        return
-        
-    def text_index(self,line,column):
-        return "%d.%d" % (line, column)
-        
-    def text_eol(self,line):
-        return "%d.end" % (line) 
-   
-
 
 # ***************************************
 # MAIN
