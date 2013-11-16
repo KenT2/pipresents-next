@@ -96,26 +96,27 @@ class Validator:
                             if track['track-ref']=='pp-menu-background' and track['type']<>'menu-background': self.result.display('f',"pp-menu-background track is not a 'menu-background'")
                         
                         # check media tracks not blank where mandatory
-                        if track['type'] in ('video','menu-background'):
+                        if track['type'] in ('menu-background'):
                             if track['location'].strip()=='':
                                 self.result.display('f',"blank location")
 
                         # warn if media tracks blank  where optional
-                        if track['type'] in ('audio','image'):
+                        if track['type'] in ('audio','image','web','video'):
                             if track['location'].strip()=='':
                                 self.result.display('w',"blank location")
                         
                         # check location of relative media tracks where present                   
-                        if track['type'] in ('video','audio','image','menu-background'):    
+                        if track['type'] in ('video','audio','image','menu-background','web'):    
                             track_file=track['location']
                             if track_file.strip()<>'' and  track_file[0]=="+":
                                     track_file=pp_home+track_file[1:]
                                     if not os.path.exists(track_file): self.result.display('f',"location "+track['location']+ " media file not found")
 
-                        if track['type'] in ('video','audio','message','image'):
-                            # check common simple fields
+                        if track['type'] in ('video','audio','message','image','web'):
+                            # check common fields
                             self.check_animate('animate-begin',track['animate-begin'])
                             self.check_animate('animate-end',track['animate-end'])
+                            self.check_plugin(track['plugin'],pp_home)
                             self.check_show_control(track['show-control-begin'],v_show_labels)
                             self.check_show_control(track['show-control-end'],v_show_labels)
                             if track['background-image']<>'':
@@ -154,6 +155,10 @@ class Validator:
                             if track['text']<>"":
                                 if track['message-x']<>'' and not track['message-x'].isdigit(): self.result.display('f',"'message-x' is not blank, 0 or a positive integer")
                                 if track['message-y']<>'' and not track['message-y'].isdigit(): self.result.display('f',"'message-y' is not blank, 0 or a positive integer")
+                                
+                        if track['type']=='web':
+                            self.check_browser_commands(track['browser-commands'])
+                            self.check_web_window('track','web-window',show['web-window'])
   
                       
                         # CHECK CROSS REF TRACK TO SHOW
@@ -233,6 +238,7 @@ class Validator:
                     self.check_volume('show','mplayer-volume',show['mplayer-volume'])
                     self.check_omx_window('show','omx-window',show['omx-window'])
                     self.check_image_window('show','image-window',show['image-window'])
+                    self.check_web_window('show','web-window',show['web-window'])
                     self.check_controls('controls',show['controls'])
 
 
@@ -255,9 +261,7 @@ class Validator:
                                 
                     if show['type']=="menu":
                             if not show['timeout'].isdigit(): self.result.display('f',"'timeout' is not 0 or a positive integer")
-                            if not show['menu-x'].isdigit(): self.result.display('f',"'menu-x' is not 0 or a positive integer")
-                            if not show['menu-y'].isdigit(): self.result.display('f',"'menu-y' is not 0 or a positive integer")
-                            if not show['menu-spacing'].isdigit(): self.result.display('f',"'menu-spacing' is not 0 or a positive integer")       
+                            if not show['hint-x'].isdigit(): self.result.display('f',"'hint-x' is not 0 or a positive integer")
                             if not show['hint-y'].isdigit(): self.result.display('f',"'hint-y' is not 0 or a positive integer")
 
 
@@ -436,8 +440,124 @@ class Validator:
              return
 
 # *******************   
+# Check menu
+# ***********************               
+# window
+# consistencty of modes
+        
+    def check_menu(self,show):
+
+        if not show['menu-rows'].isdigit(): self.result.display('f'," Menu Rows is not 0 or a positive integer")
+        if not show['menu-columns'].isdigit(): self.result.display('f'," Menu Columns is not 0 or a positive integer")     
+        if not show['menu-icon-width'].isdigit(): self.result.display('f'," Icon Width is not 0 or a positive integer") 
+        if not show['menu-icon-height'].isdigit(): self.result.display('f'," Icon Height is not 0 or a positive integer")
+        if not show['menu-horizontal-padding'].isdigit(): self.result.display('f'," Horizontal Padding is not 0 or a positive integer")
+        if not show['menu-vertical-padding'].isdigit(): self.result.display('f'," Vertical padding is not 0 or a positive integer") 
+        if not show['menu-text-width'].isdigit(): self.result.display('f'," Text Width is not 0 or a positive integer") 
+        if not show['menu-text-height'].isdigit(): self.result.display('f'," Text Height is not 0 or a positive integer")
+        if not show['menu-horizontal-separation'].isdigit(): self.result.display('f'," Horizontal Separation is not 0 or a positive integer") 
+        if not show['menu-vertical-separation'].isdigit(): self.result.display('f'," Vertical Separation is not 0 or a positive integer")
+        if not show['menu-strip-padding'].isdigit(): self.result.display('f'," Stipple padding is not 0 or a positive integer")    
+
+        if not show['menu-text-x'].isdigit(): self.result.display('f'," Menu Text x is not 0 or a positive integer") 
+        if not show['menu-text-y'].isdigit(): self.result.display('f'," Menu Text y is not 0 or a positive integer")
+
+        if self.show['menu-icon-mode']=='none' and self.show['menu-text-mode']=='none':
+            self.result.display('f'," Icon and Text are both None") 
+
+        if self.show['menu-icon-mode']=='none' and self.show['menu-text-mode']=='overlay':
+            self.result.display('f'," cannot overlay none icon") 
+            
+        self.check_menu_window(show['menu-window'])
+
+    def check_menu_window(self,line):
+        if line =='':
+            self.result.display('f'," menu Window: may noot be blank")
+            return
+        
+        if line<>'':
+            fields = line.split()
+            if len(fields) not in  (1, 2,4):
+                self.result.display('f'," menu Window: wrong number of fields") 
+                return
+            if len(fields)==1:
+                if fields[0]<>'fullscreen':
+                    self.result.display('f'," menu Window: single argumetn must be fullscreen")
+                    return
+            if len(fields)==2:                    
+                if not (fields[0].isdigit() and fields[1].isdigit()):
+                    self.result.display('f'," menu Window: coordinates must be positive integers")
+                    return
+                    
+            if len(fields)==4:                    
+                if not(fields[0].isdigit() and fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit()):
+                    self.result.display('f'," menu Window: coordinates must be positive integers")
+                    return
+
+
+
+
+             
+             
+# *******************   
+# Check plugin
+# ***********************             
+             
+    def check_plugin(self,plugin_cfg,pp_home):
+        if plugin_cfg.strip()<>'' and  plugin_cfg[0]=="+":
+            plugin_cfg=pp_home+plugin_cfg[1:]
+            if not os.path.exists(plugin_cfg):
+                self.result.display('f','plugin configuration file not found: '+ plugin_cfg)
+
+
+# *******************   
+# Check browser commands
+# ***********************             
+             
+    def check_browser_commands(self,command_text):
+        lines = command_text.split('\n')
+        for line in lines:
+            if line.strip()=="":
+                continue
+            self.check_browser_command(line)
+
+
+    def check_browser_command(self,line):
+        fields = line.split()
+        if fields[0]=='uzbl':
+            return
+        
+        if len(fields) not in (1,2):
+            self.result.display('f','incorrect number of fields in browser command: '+ line)
+            return
+            
+        command = fields[0]
+        if command not in ('load','refresh','wait','exit','loop'):
+            self.result.display('f','unknown command in browser commands: '+ line)
+            return
+           
+        if command in ('refresh','exit','loop') and len(fields)<>1:
+            self.result.display('f','incorrect number of fields for '+ command + 'in: '+ line)
+            return
+            
+        if command == 'load':
+            if len(fields)<>2:
+                self.result.display('f','incorrect number of fields for '+ command + 'in: '+ line)
+                return
+
+        if command == 'wait':
+            if len(fields)<>2:
+                self.result.display('f','incorrect number of fields for '+ command + 'in: '+ line)
+                return          
+            arg = fields[1]
+            if not arg.isdigit():
+                self.result.display('f','Argument for Wait is not 0 or positive number in: '+ line)
+                return
+      
+             
+# *******************   
 # Check controls
-# ***********************
+# *******************
 
     def check_controls(self,name,controls_text):
         lines = controls_text.split('\n')
@@ -583,54 +703,136 @@ class Validator:
         else:
             return self.config.get(section,item)
 
+            
+            
+            
+    def check_web_window(self,type,field,line):
+
+        # check warp _ or xy2
+        fields = line.split()
+        
+        if type=='show' and len(fields)==0:
+            self.result.display('f','Show must have web window: ' + field + ", " + line)
+            return
+            
+        if len(fields) == 0:
+            return        
+
+        #deal with warp which has 1 or 5  arguments
+        if  fields[0] <>'warp':
+            self.result.display('f','Illegal command: ' + field + ", " + line)
+        if len(fields) not in (1,5):
+            self.result.display('f','Wrong number of fields for warp: ' + field + ", " + line)
+            return
+
+        # deal with window coordinates    
+        if len(fields) == 5:
+            #window is specified
+            if not (fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit() and fields[4].isdigit()):
+                self.result.display('f','coordinate is not a positive integer ' + field + ", " + line)
+                return
+
+
+
+    
 
 # *************************************
 # IMAGE WINDOW
 # ************************************
 
     def check_image_window(self,type,field,line):
-            fields = line.split()
-            if type=='show' and len(fields)==0:
-                self.result.display('f','Wrong number of fields: ' + field + ", " + line)
-                return
-
-            if len(fields) not in (0,1,2,4,5):
-                self.result.display('f','Wrong number of fields: ' + field + ", " + line)
-                return
+    
+        fields = line.split()
+        
+        if type=='show' and len(fields)==0:
+            self.result.display('f','Show must have image window: ' + field + ", " + line)
+            return
             
-            if len(fields)==1:
-                if fields[0]<>'centred':self.result.display('f','Single field is not "centred": ' + field + ", " + line)
-                
-            elif len(fields)==2:
-                if not fields[0].isdigit() or not fields[1].isdigit():self.result.display('f','Field is not 0 or a positive integer: ' + field + ", " + line)
+        if len(fields) == 0:
+            return
 
-            elif len(fields) in (4,5):
-                if not fields[0].isdigit() or not fields[1].isdigit() or not fields[2].isdigit() or not fields[3].isdigit():
-                    self.result.display('f','Field is not 0 or a positive integer: ' + field + ", " + line)
-                if len(fields)==5:
-                     if  fields[4] not in ('NEAREST','BILINEAR','BICUBIC','ANTIALIAS'):
-                                self.result.display('f',': Wrong filter: ' + field + ", " + line)
+        # deal with original whch has 0 or 2 arguments
+        filter=''
+        if fields[0]=='original':
+            if len(fields) not in (1,3):
+                self.result.display('f','Wrong number of fields for original: ' + field + ", " + line)
+                return      
+            # deal with window coordinates    
+            if len(fields) == 3:
+                #window is specified
+                if not (fields[1].isdigit() and fields[2].isdigit()):
+                    self.result.display('f','coordinate is not a positive integer ' + field + ", " + line)
+                    return
+                return
+            else:
+                return
+
+        #deal with remainder which has 1, 2, 5 or  6arguments
+        # check basic syntax
+        if  fields[0] not in ('shrink','fit','warp'):
+            self.result.display('f','Illegal command: ' + field + ", " + line)
+            return
+        if len(fields) not in (1,2,5,6):
+            self.result.display('f','Wrong number of fields: ' + field + ", " + line)
+            return
+        if len(fields)==6 and fields[5] not in ('NEAREST','BILINEAR','BICUBIC','ANTIALIAS'):
+            self.result.display('f','Illegal Filter: ' + field + ", " + line)
+            return
+        if len(fields)==2 and fields[1] not in ('NEAREST','BILINEAR','BICUBIC','ANTIALIAS'):
+            self.result.display('f','Illegal Filter: ' + field + ", " + line)
+        
+        # deal with window coordinates    
+        if len(fields) in (5,6):
+            #window is specified
+            if not (fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit() and fields[4].isdigit()):
+                self.result.display('f','coordinate is not a positive integer ' + field + ", " + line)
+                return
+
+            
+
+
+
+
+
                      
 # *************************************
 # OMX WINDOW
 # ************************************
-
+                    
     def check_omx_window(self,type,field,line):
-            fields = line.split()
-            if type=='show' and len(fields)==0:
-                self.result.display('f','Wrong number of fields: ' + field + ", " + line)
+
+        fields = line.split()
+        if type=='show' and len(fields)==0:
+            self.result.display('f','show must have video window: ' + field + ", " + line)
+            return
+            
+        if len(fields) == 0:
+            return
+            
+        # deal with original which has 1
+        if fields[0]=='original':
+            if len(fields) <> 1:
+                self.result.display('f','Wrong number of fields for original: ' + field + ", " + line)
+                return 
+            return
+
+
+        #deal with warp which has 1 or 5  arguments
+        # check basic syntax
+        if  fields[0] <>'warp':
+            self.result.display('f','Illegal command: ' + field + ", " + line)
+            return
+        if len(fields) not in (1,5):
+            self.result.display('f','Wrong number of fields for warp: ' + field + ", " + line)
+
+        # deal with window coordinates    
+        if len(fields) == 5:
+            #window is specified
+            if not (fields[1].isdigit() and fields[2].isdigit() and fields[3].isdigit() and fields[4].isdigit()):
+                self.result.display('f','coordinate is not a positive integer ' + field + ", " + line)
                 return
 
-            if len(fields) not in (0,1,4):
-                self.result.display('f','Wrong number of fields: ' + field + ", " + line)
-                return
-            
-            if len(fields)==1:
-                if fields[0]<>'centred':self.result.display('f','Single field is not "centred": ' + field + ", " + line)
-                
-            elif len(fields) == 4:
-                if not fields[0].isdigit() or not fields[1].isdigit() or not fields[2].isdigit() or not fields[3].isdigit():
-                    self.result.display('f','Field is not 0 or a positive integer: ' + field + ", " + line)
+
 
 
 # *************************************

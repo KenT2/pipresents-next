@@ -56,8 +56,10 @@ class HyperlinkShow:
 
     def __init__(self,
                             show_params,
+                            root,
                             canvas,
                             showlist,
+                             pp_dir,
                             pp_home,
                             pp_profile):
         """ canvas - the canvas that the tracks of the event show are to be written on
@@ -72,8 +74,10 @@ class HyperlinkShow:
         
         #instantiate arguments
         self.show_params=show_params
+        self.root=root
         self.showlist=showlist
         self.canvas=canvas
+        self.pp_dir=pp_dir
         self.pp_home=pp_home
         self.pp_profile=pp_profile
 
@@ -220,7 +224,7 @@ class HyperlinkShow:
                 if self.player<>None:
                     self.player.input_pressed(operation)
 
-            elif operation[0:4]=='omx-' or operation[0:6]=='mplay-':
+            elif operation[0:4]=='omx-' or operation[0:6]=='mplay-'or operation[0:5]=='uzbl-':
                 if self.player<>None:
                     self.player.input_pressed(operation)
 
@@ -519,7 +523,7 @@ class HyperlinkShow:
         if track_type=="video":
             # create a videoplayer
             track_file=self.complete_path(selected_track)
-            self.player=VideoPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=VideoPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
@@ -529,7 +533,7 @@ class HyperlinkShow:
         elif track_type=="audio":
             # create a audioplayer
             track_file=self.complete_path(selected_track)
-            self.player=AudioPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=AudioPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
@@ -538,19 +542,29 @@ class HyperlinkShow:
                                         
         elif track_type=="image":
             track_file=self.complete_path(selected_track)
-            self.player=ImagePlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=ImagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                     self.showlist,
                                     self.end_player,
                                     self.page_callback,
                                     enable_menu=False,
                                     )
+
+        elif track_type=="web":
+            # create a browser
+            track_file=self.complete_path(selected_track)
+            self.player=BrowserPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
+            self.player.play(track_file,
+                                        self.showlist,
+                                        self.end_player,
+                                        self.page_callback,
+                                        enable_menu=False)
                                     
                          
         elif track_type=="message":
             # bit odd because MessagePlayer is used internally to display text. 
             text=selected_track['text']
-            self.player=MessagePlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=MessagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(text,
                                     self.showlist,
                                     self.end_player,
@@ -571,40 +585,50 @@ class HyperlinkShow:
             
             if selected_show['type']=="mediashow":    
                 self.shower= MediaShow(selected_show,
+                                                               self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                               self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="liveshow":    
                 self.shower= LiveShow(selected_show,
+                                                                self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                              self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="radiobuttonshow":    
                 self.shower= RadioButtonShow(selected_show,
+                                                                 self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                                 self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="hyperlinkshow":    
                 self.shower= HyperlinkShow(selected_show,
+                                                               self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                               self,pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
                 
             elif selected_show['type']=="menu": 
                 self.shower= MenuShow(selected_show,
+                                                        self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                        self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')                    

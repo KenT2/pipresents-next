@@ -1,3 +1,31 @@
+1.2.3 16/11/2013
+
+new - browser player to play web tracks stored locally or on the internet
+new - menushow has many new menu layouts with icons and bullets
+new - much improved scaling of images in ImagePlayer
+new - plugins (user provided python modules) allow dynamic content to modify images or to be written to the display
+
+enhancement - video window, image window and web window now use the same terminology
+enhancement -  menus can now have a background colour
+enhancement - hint positioning in mediashow and liveshow now more flexible
+enhancement - hint positioning in menu now more flexible
+enhancement - liveshow can now include web tracks
+enhancement - all track types now have the same set of ancillaries:
+   message player has track text
+   message player has show text
+enhancement - ability to inhibit display of show text and show background in individual tracks
+   all players have display show text
+   all players have display show background
+enhancement - changed titles from mplayer to Audio Player Options, Audio Player Audio, Audio Player Speaker, Audio Player Volume,
+    to allow audio players other than mplayer on other platforms
+enhancement - changed titles from OMXPlayer to Video Player Options Video Player Audio, Video Window, Video Player Volume,
+    to allow video players other than OMXplayer on other platforms
+enhancement - includes desktop files for examples.sh and pp_editor.py
+
+fixed - duration of Message Track set to '' in new_tracks
+fixed - track text now has font chooser
+
+
 1.2.2b 17/09/2013
 enhancement - non-fullscreen mode works much better, see manual for size adjustment.
 enhancements to editor - tabs, font chooser, colour chooser, location browser

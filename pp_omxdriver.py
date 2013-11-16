@@ -54,6 +54,8 @@ class OMXDriver(object):
         
         self.paused=None
 
+        self._process=None
+
     def control(self,char):
         self._process.send(char)
 
@@ -76,12 +78,14 @@ class OMXDriver(object):
         self.paused = False
 
     def stop(self):
-        self._process.send('q')
+        if self._process<>None:
+            self._process.send('q')
 
     # kill the subprocess (omxplayer.bin). Used for tidy up on exit.
     def terminate(self,reason):
         self.terminate_reason=reason
-        self._process.send('q')
+        if self._process<>None:
+            self._process.send('q')
         
     def terminate_reason(self):
         return self.terminate_reason

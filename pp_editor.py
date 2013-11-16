@@ -137,6 +137,7 @@ class PPEditor:
         typemenu.add_command(label='Video', command = self.new_video_track)
         typemenu.add_command(label='Audio', command = self.new_audio_track)
         typemenu.add_command(label='Image', command = self.new_image_track)
+        typemenu.add_command(label='Web', command = self.new_web_track)
         typemenu.add_command(label='Message', command = self.new_message_track)
         typemenu.add_command(label='Show', command = self.new_show_track)
         typemenu.add_command(label='Menu Background', command = self.new_menu_background_track)
@@ -680,6 +681,9 @@ class PPEditor:
     def new_audio_track(self):
         self.new_track(PPdefinitions.new_tracks['audio'],None)
 
+    def new_web_track(self):
+        self.new_track(PPdefinitions.new_tracks['web'],None)
+        
     def new_image_track(self):
         self.new_track(PPdefinitions.new_tracks['image'],None)
 
@@ -718,6 +722,7 @@ class PPEditor:
             PPdefinitions.IMAGE_FILES,
             PPdefinitions.VIDEO_FILES,
             PPdefinitions.AUDIO_FILES,
+            PPdefinitions.WEB_FILES,
           ('All files', '*')]    #last one is ignored in finding files
                                     # in directory, for dialog box only
         directory=tkFileDialog.askdirectory(initialdir=self.options.initial_media_dir)
@@ -754,11 +759,13 @@ class PPEditor:
         (root,title)=os.path.split(afile)
         (root,ext)= os.path.splitext(afile)
         if ext.lower() in PPdefinitions.IMAGE_FILES:
-            self.new_track(PPdefinitions.new_tracks['image'],{'title':title,'track-ref':'','location':location,'duration':'','transition':'cut'})
+            self.new_track(PPdefinitions.new_tracks['image'],{'title':title,'track-ref':'','location':location})
         elif ext.lower() in PPdefinitions.VIDEO_FILES:
-            self.new_track(PPdefinitions.new_tracks['video'],{'title':title,'track-ref':'','location':location,'omx-audio':''})
+            self.new_track(PPdefinitions.new_tracks['video'],{'title':title,'track-ref':'','location':location})
         elif ext.lower() in PPdefinitions.AUDIO_FILES:
-            self.new_track(PPdefinitions.new_tracks['audio'],{'title':title,'track-ref':'','location':location,'mplayer-audio':'','audiospeaker':''})
+            self.new_track(PPdefinitions.new_tracks['audio'],{'title':title,'track-ref':'','location':location})
+        elif ext.lower() in PPdefinitions.WEB_FILES:
+            self.new_track(PPdefinitions.new_tracks['web'],{'title':title,'track-ref':'','location':location})
         else:
             self.mon.err(self,afile + " - file extension not recognised")
 

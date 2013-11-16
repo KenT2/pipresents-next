@@ -7,8 +7,8 @@ class ShowManager:
     
 # ShowManager manages PiPresents' concurrent shows. It does not manage sub-shows or child-shows.
 # concurrent shows are always 'top level' shows:
-# They can be started by the start show or by 'myshow start' in the Show Control field in the ControlPlayer or PagePlayer
-# They can be stopped either by 'myshow stop' in the Show Control field in the ControlPlayer
+# They can be started by the start show or by 'myshow start' in the Show Control field of players
+# They can be stopped either by 'myshow stop' in the Show Control field in players
 # or in the case of mediashows by making them single-run in its  Repeat field
 
 # a show with the same reference should not be run twice as there is no way to reference an individual instance when stopping
@@ -21,10 +21,12 @@ class ShowManager:
     SHOW_REF= 0   # show-reference  - name of the show as in editor
     SHOW_OBJ = 1   # the python object
 
-    def __init__(self,show_id,showlist,show_params,canvas,pp_profile,pp_home):
+    def __init__(self,show_id,showlist,show_params,root,canvas,pp_dir,pp_profile,pp_home):
         self.showlist=showlist
         self.show_params=show_params
+        self.root=root
         self.canvas=canvas
+        self.pp_dir=pp_dir
         self.pp_profile=pp_profile
         self.pp_home=pp_home
         self.show_id=show_id
@@ -172,8 +174,10 @@ class ShowManager:
             
             if show['type']=="mediashow":
                 show_obj = MediaShow(show,
+                                                                 self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                                 self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.set_running(index,show_obj)
@@ -182,8 +186,10 @@ class ShowManager:
 
             if show['type']=="radiobuttonshow":
                 show_obj = RadioButtonShow(show,
+                                                               self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                               self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.set_running(index,show_obj)
@@ -192,8 +198,10 @@ class ShowManager:
  
             if show['type']=="hyperlinkshow":
                 show_obj = HyperlinkShow(show,
+                                                                 self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                                 self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.set_running(index,show_obj)
@@ -202,8 +210,10 @@ class ShowManager:
             
             elif show['type']=="menu":
                 show_obj = MenuShow(show,
+                                                        self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                        self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.set_running(index,show_obj)
@@ -212,8 +222,10 @@ class ShowManager:
 
             elif show['type']=="liveshow":
                 show_obj= LiveShow(show,
+                                                        self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                       self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.set_running(index,show_obj)

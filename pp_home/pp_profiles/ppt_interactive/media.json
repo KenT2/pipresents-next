@@ -3,6 +3,7 @@
  "tracks": [
   {
    "sub-show": "mymenu", 
+   "thumbnail": "", 
    "title": "Child Menu", 
    "track-ref": "pp-child-show", 
    "type": "show"
@@ -13,6 +14,8 @@
    "animate-end": "", 
    "background-colour": "", 
    "background-image": "", 
+   "display-show-background": "yes", 
+   "display-show-text": "no", 
    "duration": "5", 
    "links": "", 
    "message-colour": "white", 
@@ -20,11 +23,18 @@
    "message-justify": "left", 
    "message-x": "", 
    "message-y": "", 
+   "plugin": "", 
    "show-control-begin": "", 
    "show-control-end": "", 
    "text": "First track of ppt_interactive", 
+   "thumbnail": "", 
    "title": "First Track", 
    "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
    "type": "message"
   }, 
   {
@@ -33,6 +43,8 @@
    "animate-end": "", 
    "background-colour": "", 
    "background-image": "", 
+   "display-show-background": "yes", 
+   "display-show-text": "no", 
    "duration": "5", 
    "links": "", 
    "message-colour": "white", 
@@ -40,11 +52,18 @@
    "message-justify": "left", 
    "message-x": "", 
    "message-y": "", 
+   "plugin": "", 
    "show-control-begin": "", 
    "show-control-end": "", 
    "text": "Second Track", 
+   "thumbnail": "", 
    "title": "Second Track", 
    "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
    "type": "message"
   }
  ]

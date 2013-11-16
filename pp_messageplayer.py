@@ -8,6 +8,7 @@ import PIL.ImageTk
 import PIL.ImageEnhance
 
 from pp_showmanager import ShowManager
+from pp_pluginmanager import PluginManager
 from pp_gpio import PPIO
 from pp_utils import Monitor
 
@@ -22,15 +23,17 @@ class MessagePlayer:
 # external commands
 # *******************
 
-    def __init__(self,show_id,canvas,show_params,track_params,pp_home,pp_profile):
+    def __init__(self,show_id,root,canvas,show_params,track_params,pp_dir,pp_home,pp_profile):
 
         self.mon=Monitor()
         self.mon.on()
-       
+
+        self.root=root
         self.canvas=canvas
         self.show_id=show_id
         self.track_params=track_params
         self.show_params=show_params
+        self.pp_dir=pp_dir
         self.pp_home=pp_home
         self.pp_profile=pp_profile
 
@@ -42,10 +45,12 @@ class MessagePlayer:
             self.duration= int(self.show_params['duration'])
 
         # get background image from profile.
+        self.background_file=''
         if self.track_params['background-image']<>"":
             self.background_file= self.track_params['background-image']
         else:
-            self.background_file= self.show_params['background-image']
+            if self.track_params['display-show-background']=='yes':
+                self.background_file= self.show_params['background-image']
             
         # get background colour from profile.
         if self.track_params['background-colour']<>"":
@@ -63,7 +68,10 @@ class MessagePlayer:
         #get animation instructions from profile
         self.animate_begin_text=self.track_params['animate-begin']
         self.animate_end_text=self.track_params['animate-end']
-        
+
+        # open the plugin Manager
+        self.pim=PluginManager(self.show_id,self.root,self.canvas,self.show_params,self.track_params,self.pp_dir,self.pp_home,self.pp_profile) 
+
         #create an instance of PPIO so we can create gpio events
         self.ppio = PPIO() 
 
@@ -89,7 +97,7 @@ class MessagePlayer:
 
 
         # create an  instance of showmanager so we can control concurrent shows
-        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.canvas,self.pp_profile,self.pp_home)
+        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.root,self.canvas,self.pp_dir,self.pp_profile,self.pp_home)
 
      # Control other shows at beginning
         reason,message=self.show_manager.show_control(self.track_params['show-control-begin'])
@@ -97,16 +105,22 @@ class MessagePlayer:
             self.end_callback(reason,message)
             self=None
         else:
-            self.display_content()
-            # create animation events
-            reason,message=self.ppio.animate(self.animate_begin_text,id(self))
-            if reason=='error':
+            #display content
+            reason,message=self.display_content()
+            if reason == 'error':
                 self.mon.err(self,message)
                 self.end_callback(reason,message)
                 self=None
             else:
-                # start text display
-                self.start_dwell()
+                # create animation events
+                reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                if reason=='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:
+                    # start text display
+                    self.start_dwell()
 
     def terminate(self,reason):
         # no lower level things to terminate so just go to end
@@ -128,6 +142,7 @@ class MessagePlayer:
 
     def stop(self):
         self.quit_signal=True
+
         
 
             
@@ -163,37 +178,41 @@ class MessagePlayer:
 # *****************
 
     def end(self,reason,message):
-            # abort the timer
-            if self.tick_timer<>None:
-                self.canvas.after_cancel(self.tick_timer)
-                self.tick_timer=None
-            
-            if reason in ('error','killed'):
+        # stop the plugin
+        if self.track_params['plugin']<>'':
+            self.pim.stop_plugin()
+
+        # abort the timer
+        if self.tick_timer<>None:
+            self.canvas.after_cancel(self.tick_timer)
+            self.tick_timer=None
+        
+        if reason in ('error','killed'):
+            self.end_callback(reason,message)
+            self=None
+
+        else:
+            # normal end so do show control 
+            # Control concurrent shows at end
+            reason,message=self.show_manager.show_control(self.track_params['show-control-end'])
+            if reason =='error':
+                self.mon.err(self,message)
                 self.end_callback(reason,message)
                 self=None
-
             else:
-                # normal end so do show control 
-                # Control concurrent shows at end
-                reason,message=self.show_manager.show_control(self.track_params['show-control-end'])
-                if reason =='error':
+                # clear events list for this track
+                if self.track_params['animate-clear']=='yes':
+                    self.ppio.clear_events_list(id(self))
+                
+                # create animation events for ending
+                reason,message=self.ppio.animate(self.animate_end_text,id(self))
+                if reason=='error':
                     self.mon.err(self,message)
                     self.end_callback(reason,message)
                     self=None
                 else:
-                    # clear events list for this track
-                    if self.track_params['animate-clear']=='yes':
-                        self.ppio.clear_events_list(id(self))
-                    
-                    # create animation events for ending
-                    reason,message=self.ppio.animate(self.animate_end_text,id(self))
-                    if reason=='error':
-                        self.mon.err(self,message)
-                        self.end_callback(reason,message)
-                        self=None
-                    else:
-                        self.end_callback('normal',"track has terminated or quit")
-                        self=None
+                    self.end_callback('normal',"track has terminated or quit")
+                    self=None
 
 
 
@@ -221,8 +240,33 @@ class MessagePlayer:
                                               image=self.background,
                                               anchor=CENTER,
                                               tag='pp-content')
+
+         # display show text if enabled
+        if self.show_params['show-text']<> ''and self.track_params['display-show-text']=='yes':
+            self.canvas.create_text(int(self.show_params['show-text-x']),int(self.show_params['show-text-y']),
+                                                    anchor=NW,
+                                                  text=self.show_params['show-text'],
+                                                  fill=self.show_params['show-text-colour'],
+                                                  font=self.show_params['show-text-font'],
+                                                tag='pp-content')
+
+        # display track text if enabled
+        if self.track_params['track-text']<> '':
+            self.canvas.create_text(int(self.track_params['track-text-x']),int(self.track_params['track-text-y']),
+                                                    anchor=NW,
+                                                  text=self.track_params['track-text'],
+                                                  fill=self.track_params['track-text-colour'],
+                                                  font=self.track_params['track-text-font'],
+                                                tag='pp-content')
+
+        # execute the plugin if required
+        if self.track_params['plugin']<>'':
+            reason,message,self.text = self.pim.do_plugin(self.text,self.track_params['plugin'])
+            if reason <> 'normal':
+                return reason,message
+
  
-        # display text
+        # display message text
         if self.track_params['message-x']<>'':
              self.canvas.create_text(int(self.track_params['message-x']), int(self.track_params['message-y']),
                                                     text=self.text.rstrip('\n'),
@@ -242,15 +286,17 @@ class MessagePlayer:
 
         # display instructions (hint)
         if self.enable_menu==True:
-            self.canvas.create_text(int(self.canvas['width'])/2,
-                                    int(self.canvas['height']) - int(self.show_params['hint-y']),
-                                    text=self.show_params['hint-text'],
-                                    fill=self.show_params['hint-colour'],
-                                    font=self.show_params['hint-font'],
-                                    tag='pp-content')
+            self.canvas.create_text(int(self.show_params['hint-x']),
+                                            int(self.show_params['hint-y']),
+                                            text=self.show_params['hint-text'],
+                                            fill=self.show_params['hint-colour'],
+                                            font=self.show_params['hint-font'],
+                                            anchor=NW,
+                                           tag='pp-content')
             
         self.canvas.tag_raise('pp-click-area')
         self.canvas.update_idletasks( )
+        return 'normal',''
 
 # *****************
 # utilities

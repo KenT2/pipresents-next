@@ -16,7 +16,7 @@
    "duration": "5", 
    "first-track-ref": "first", 
    "home-track-ref": "first", 
-   "image-window": "centred", 
+   "image-window": "original", 
    "links": "", 
    "medialist": "page.json", 
    "mplayer-audio": "hdmi", 
@@ -25,7 +25,8 @@
    "omx-audio": "hdmi", 
    "omx-other-options": "", 
    "omx-volume": "0", 
-   "omx-window": "centred", 
+   "omx-window": "original", 
+   "show-canvas": "", 
    "show-ref": "hyperlinkshow", 
    "show-text": "", 
    "show-text-colour": "", 
@@ -36,7 +37,8 @@
    "timeout-track-ref": "timeout", 
    "title": "Hyperlinkshow", 
    "transition": "cut", 
-   "type": "hyperlinkshow"
+   "type": "hyperlinkshow", 
+   "web-window": "warp"
   }
  ]
 }

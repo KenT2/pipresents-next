@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Pi Presents Examples
+Comment=Integrated Development Environment for Python
+Exec= /home/pi/pipresents/examples.sh
+Icon=/home/pi/pipresents/billboard_picture.png
+Terminal=false
+MultipleArgs=false
+Type=Application
+Categories=Application;Development;
+StartupNotify=true

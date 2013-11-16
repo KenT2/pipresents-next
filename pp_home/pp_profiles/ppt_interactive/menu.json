@@ -2,17 +2,13 @@
  "issue": "1.2", 
  "tracks": [
   {
-   "location": "+/media/sunset.gif", 
-   "title": "Menu Background", 
-   "track-ref": "pp-menu-background", 
-   "type": "menu-background"
-  }, 
-  {
    "animate-begin": "", 
    "animate-clear": "no", 
    "animate-end": "", 
    "background-colour": "", 
    "background-image": "", 
+   "display-show-background": "yes", 
+   "display-show-text": "no", 
    "duration": "5", 
    "links": "", 
    "message-colour": "white", 
@@ -20,11 +16,18 @@
    "message-justify": "left", 
    "message-x": "", 
    "message-y": "", 
+   "plugin": "", 
    "show-control-begin": "", 
    "show-control-end": "", 
    "text": "First track of menu\n\n\n\n", 
+   "thumbnail": "", 
    "title": "Example Track of menu", 
    "track-ref": "", 
+   "track-text": "", 
+   "track-text-colour": "", 
+   "track-text-font": "", 
+   "track-text-x": "0", 
+   "track-text-y": "0", 
    "type": "message"
   }
  ]

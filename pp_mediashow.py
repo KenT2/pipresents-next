@@ -9,6 +9,7 @@ import time
 from pp_imageplayer import ImagePlayer
 from pp_videoplayer import VideoPlayer
 from pp_audioplayer import AudioPlayer
+from pp_browserplayer import BrowserPlayer
 from pp_medialist import MediaList
 from pp_utils import Monitor
 from pp_messageplayer import MessagePlayer
@@ -25,8 +26,10 @@ class MediaShow:
 
     def __init__(self,
                             show_params,
+                             root,
                             canvas,
                             showlist,
+                            pp_dir,
                             pp_home,
                             pp_profile):
         """ canvas - the canvas that the menu is to be written on
@@ -41,7 +44,9 @@ class MediaShow:
         #instantiate arguments
         self.show_params =show_params
         self.showlist=showlist
+        self.root=root
         self.canvas=canvas
+        self.pp_dir=pp_dir
         self.pp_home=pp_home
         self.pp_profile=pp_profile
 
@@ -197,7 +202,7 @@ class MediaShow:
             self.shower.input_pressed(operation,edge,source) 
         else:        
             # control this show and its tracks
-       
+            # print 'operation',operation
             if operation=='stop':
                 if self.top == False:
                     # not at top so stop the current show 
@@ -235,7 +240,7 @@ class MediaShow:
                     self.player.input_pressed(operation)
                     
             #if the operation is omxplayer or mplayer runtime control then pass it to player if running
-            elif operation[0:4]=='omx-' or operation[0:6]=='mplay-':
+            elif operation[0:4]=='omx-' or operation[0:6]=='mplay-'or operation[0:5]=='uzbl-':
                 if self.player<>None:
                     self.player.input_pressed(operation)
 
@@ -534,7 +539,7 @@ class MediaShow:
         if track_type=="video":
             # create a videoplayer
             track_file=self.complete_path(selected_track)
-            self.player=VideoPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=VideoPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
@@ -544,17 +549,30 @@ class MediaShow:
         elif track_type=="audio":
             # create a audioplayer
             track_file=self.complete_path(selected_track)
-            self.player=AudioPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=AudioPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
+            self.player.play(track_file,
+                                        self.showlist,
+                                        self.end_player,
+                                        self.ready_callback,
+                                        enable_menu=self.enable_child)
+ 
+        elif track_type=="web":
+            # create a browser
+            track_file=self.complete_path(selected_track)
+            self.player=BrowserPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
                                         self.ready_callback,
                                         enable_menu=self.enable_child)
   
+
+
+ 
         elif track_type=="image":
             track_file=self.complete_path(selected_track)
             # images played from menus don't have children
-            self.player=ImagePlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=ImagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                     self.showlist,
                                     self.end_player,
@@ -564,7 +582,7 @@ class MediaShow:
         elif track_type=="message":
             # bit odd because MessagePlayer is used internally to display text. 
             text=selected_track['text']
-            self.player=MessagePlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=MessagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(text,
                                     self.showlist,
                                     self.end_player,
@@ -585,40 +603,50 @@ class MediaShow:
                 
             if selected_show['type']=="mediashow":    
                 self.shower= MediaShow(selected_show,
+                                                               self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                               self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command=self.direction)
 
             elif selected_show['type']=="liveshow":    
                 self.shower= LiveShow(selected_show,
+                                                                self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                                self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="radiobuttonshow":
                 self.shower= RadioButtonShow(selected_show,
+                                                         self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                        self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="hyperlinkshow":
                 self.shower= HyperlinkShow(selected_show,
+                                                       self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                       self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
             
             elif selected_show['type']=="menu":
                 self.shower= MenuShow(selected_show,
+                                                        self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                          self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
@@ -719,8 +747,10 @@ class MediaShow:
             self.display_message_callback=_display_message_callback
             tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','background-colour':'',
                 'message-justify':'left','background-image':'','show-control-begin':'','show-control-end':'',
-                'animate-begin':'','animate-clear':'','animate-end':'','message-x':'','message-y':''}
-            self.player=MessagePlayer(self.show_id,canvas,tp,tp,self.pp_home,self.pp_profile)
+                'animate-begin':'','animate-clear':'','animate-end':'','message-x':'','message-y':'',
+                'display-show-background':'no','display-show-text':'no','show-text':'','track-text':'',
+                'plugin':''}
+            self.player=MessagePlayer(self.show_id,self.root,canvas,tp,tp,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(content,self.showlist,self.display_message_end,None,False)
 
     def   display_message_end(self,reason,message):

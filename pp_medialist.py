@@ -148,6 +148,7 @@ class MediaList:
 
 
     def display_length(self):
+        # number of anonymous tracks
         count=0
         index=0
         while index<self._num_tracks:
@@ -167,7 +168,7 @@ class MediaList:
         return False
 
     def finish(self):
-        # select first anymous track in the list
+        # select last anymous track in the list
         index=self._num_tracks-1
         while index>=0:
             if self._tracks[index] ['track-ref'] =="":

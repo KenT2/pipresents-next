@@ -1,4 +1,4 @@
-PI PRESENTS  - Version 1.2.2
+PI PRESENTS  - Version 1.2.3
 ============================
 
 This repository contains Beta Test software for the next version of Pi Presents. If you are unhappy with bleeding edge software then use the main Pi Presents repository and upgrade later.
@@ -8,7 +8,7 @@ FOR BETA TESTERS
 ================
 Thank you for  helping me improve Pi Presents.
 
-Ensure you read the Release Notes in ReleaseNotes.txt. Improvements from Version 1.2.1 and earlier versions are in changelog.txt
+Ensure you read the Release Notes in ReleaseNotes.txt. Improvements from Version 1.2.2 and earlier versions are in changelog.txt
 
 I have made this next minor version of Pi Presents a Beta as it is such a major upgrade from the previous beta. The main aim of the beta is to obtain feedback on the usability of the improvements and to iron out the, hopefully, few bugs left.
 
@@ -16,7 +16,7 @@ To upgrade follow the instructions in the 'Updating Pi Presents' section below. 
 
 * As instructed in the instructions rename your pipresents directory to old-pipresents
 
-* Also copy pp_home to another directory. Part of the upgrade process will be to update all these profiles to from Version 1.2.1 to Version 1.2.2 . This being a change of minor version number update will need to be forced.
+* Also copy your pp_home to another directory. Part of the upgrade process will be to update all these profiles to from Version 1.2.2 to Version 1.2.3 . This being a change of minor version number update will need to be forced.
 
 PI PRESENTS
 ===========
@@ -24,7 +24,7 @@ Pi Presents is a display and animation control application intended for Museums 
 
 This major upgrade of Pi Presents adds in features which you kind people have suggested to me. It is now a flexible toolkit for display and animation with a large range of features. This large range of features may seem to make it complicated, hopefully not so as most of them are optional.  I have tried to keep it simple for beginners by providing an editor with templates and a set of examples for basic applications. A extensive User Manual is also provided.
 
-Pi Presents is basically five types of show, three media players for different types of track, a GPIO output sequencer, and something to handle external inputs.  These can be combined using a simple to use editor to serve a great variety of simple or complex applications. Applications include:
+Pi Presents is basically five types of show, four media players for different types of track, a GPIO output sequencer, and something to handle external inputs.  These can be combined using a simple to use editor to serve a great variety of simple or complex applications. Applications include:
 
 *	Audio-visual interpretation of exhibits by triggering a sound, video, or slideshow from GPIO, keyboard or buttons.
 
@@ -63,6 +63,7 @@ Install required applications (MPlayer, PIL and X Server utils)
          sudo apt-get install x11-xserver-utils
 		 sudo apt-get install unclutter
 		 sudo apt-get install mplayer
+		 sudo apt-get install uzbl
 
 	   
 Download and install pexpect
@@ -146,7 +147,7 @@ There should now be a directory 'KenT2-pipresents-next-examples-xxxx' in your ho
 
 Open the directory and move the 'pp_home' directory and its contents to your home directory.
 
-These examples are compatible with the version of  Pi Presents you have just downloaded. In addition you can update profiles from version 1.1.x [pipresents]  to 1.2.2 by simply opening them in the editor. However if you are a beta tester you will need to force updating of the profiles  from Version 1.2.1 to Version 1.2.2 by running the editor with --forceupdate:
+These examples are compatible with the version of  Pi Presents you have just downloaded. In addition you can update profiles from version 1.1.x [pipresents]  to 1.2.3 by simply opening them in the editor. However if you are a beta tester you will need to force updating of the profiles  from Version 1.2.2 to Version 1.2.3 by running the editor with --forceupdate:
 
       python pp_editor.py --forceupdate
 	  

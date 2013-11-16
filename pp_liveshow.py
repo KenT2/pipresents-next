@@ -1,6 +1,6 @@
 import os
 import copy
-
+import ConfigParser
 from Tkinter import *
 import Tkinter as tk
 import PIL.Image
@@ -10,6 +10,7 @@ import PIL.ImageEnhance
 from pp_imageplayer import ImagePlayer
 from pp_videoplayer import VideoPlayer
 from pp_audioplayer import AudioPlayer
+from pp_browserplayer import BrowserPlayer
 from pp_medialist import MediaList
 from pp_messageplayer import MessagePlayer
 from pp_resourcereader import ResourceReader
@@ -31,8 +32,10 @@ class LiveShow:
 
     def __init__(self,
                             show_params,
+                             root,
                             canvas,
                             showlist,
+                             pp_dir,
                             pp_home,
                             pp_profile):
 
@@ -42,7 +45,9 @@ class LiveShow:
         #instantiate arguments
         self.show_params =show_params
         self.showlist=showlist
+        self.root=root
         self.canvas=canvas
+        self.pp_dir=pp_dir
         self.pp_home=pp_home
         self.pp_profile=pp_profile
 
@@ -225,15 +230,27 @@ class LiveShow:
         
     def livelist_add_track(self,afile):
         (root,title)=os.path.split(afile)
-        (root,ext)= os.path.splitext(afile)
+        (root_plus,ext)= os.path.splitext(afile)
         if ext.lower() in PPdefinitions.IMAGE_FILES:
             self.livelist_new_track(PPdefinitions.new_tracks['image'],{'title':title,'track-ref':'','location':afile})
         if ext.lower() in PPdefinitions.VIDEO_FILES:
             self.livelist_new_track(PPdefinitions.new_tracks['video'],{'title':title,'track-ref':'','location':afile})
         if ext.lower() in PPdefinitions.AUDIO_FILES:
             self.livelist_new_track(PPdefinitions.new_tracks['audio'],{'title':title,'track-ref':'','location':afile})
+        if ext.lower() in PPdefinitions.WEB_FILES:
+            self.livelist_new_track(PPdefinitions.new_tracks['web'],{'title':title,'track-ref':'','location':afile})
+        if ext.lower()=='.cfg':
+            self.livelist_new_plugin(afile,title)
            
 
+    def livelist_new_plugin(self,plugin_cfg,title):
+
+        # read the file which is a plugin cfg file into a dictionary
+        self.plugin_config = ConfigParser.ConfigParser()
+        self.plugin_config.read(plugin_cfg)
+        self.plugin_params =  dict(self.plugin_config.items('plugin'))
+        # create a new livelist entry of a type specified in the config file with plugin
+        self.livelist_new_track(PPdefinitions.new_tracks[self.plugin_params['type']],{'title':title,'track-ref':'','plugin':plugin_cfg,'location':plugin_cfg})        
 
         
     def livelist_new_track(self,fields,values):
@@ -251,21 +268,22 @@ class LiveShow:
             for file in os.listdir(self.pp_live_dir1):
                 file = self.pp_live_dir1 + os.sep + file
                 (root_file,ext_file)= os.path.splitext(file)
-                if ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES:
+                if (ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES+PPdefinitions.WEB_FILES) or (ext_file.lower()=='.cfg'):
                     self.livelist_add_track(file)
                     
         if os.path.exists(self.pp_live_dir2):
             for file in os.listdir(self.pp_live_dir2):
                 file = self.pp_live_dir2 + os.sep + file
                 (root_file,ext_file)= os.path.splitext(file)
-                if ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES:
+                if ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES+PPdefinitions._FILES or (ext_file.lower()=='.cfg'):
                     self.livelist_add_track(file)
                     
 
         self.new_livelist= sorted(self.new_livelist, key= lambda track: os.path.basename(track['location']).lower())
-#       for it in self.new_livelist:
-#          print it['location']
-#      print ''
+        # print 'LIVELIST'
+        # for it in self.new_livelist:
+            # print 'type: ', it['type'], 'loc: ',it['location'],'\nplugin cfg: ', it['plugin']
+        # print ''
 
 
     
@@ -410,16 +428,17 @@ class LiveShow:
         if track_type=="image":
             track_file=self.complete_path(selected_track)
             # images played from menus don't have children
-            self.player=ImagePlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=ImagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                     self.showlist,
                                     self.end_player,
                                     self.ready_callback,
                                     enable_menu=enable_child)
+            
         elif track_type=="video":
             # create a videoplayer
             track_file=self.complete_path(selected_track)
-            self.player=VideoPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=VideoPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
@@ -429,7 +448,28 @@ class LiveShow:
         elif track_type=="audio":
             # create a audioplayer
             track_file=self.complete_path(selected_track)
-            self.player=AudioPlayer(self.show_id,self.canvas,self.show_params,selected_track,self.pp_home,self.pp_profile)
+            self.player=AudioPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
+            self.player.play(track_file,
+                                        self.showlist,
+                                        self.end_player,
+                                        self.ready_callback,
+                                        enable_menu=enable_child)
+                                                
+        elif track_type=="message":
+            # bit odd because MessagePlayer is used internally to display text. 
+            text=selected_track['text']
+            self.player=MessagePlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
+            self.player.play(text,
+                                    self.showlist,
+                                    self.end_player,
+                                    self.ready_callback,
+                                    enable_menu=enable_child
+                                    )
+
+        elif track_type=="web":
+            # create a browser
+            track_file=self.complete_path(selected_track)
+            self.player=BrowserPlayer(self.show_id,self.root,self.canvas,self.show_params,selected_track,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(track_file,
                                         self.showlist,
                                         self.end_player,
@@ -448,8 +488,10 @@ class LiveShow:
                 
             if selected_show['type']=="mediashow":    
                 self.shower= MediaShow(selected_show,
+                                                               self.root,
                                                                 self.canvas,
                                                                 self.showlist,
+                                                               self.pp_dir,
                                                                 self.pp_home,
                                                                 self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
@@ -457,24 +499,30 @@ class LiveShow:
             
             elif selected_show['type']=="menu":
                 self.shower= MenuShow(selected_show,
+                                                          self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                          self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="radiobuttonshow":
                 self.shower= RadioButtonShow(selected_show,
+                                                         self.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                         self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
 
             elif selected_show['type']=="hyperlinkshow":
                 self.shower= HyperlinkShow(selected_show,
+                                                       sef.root,
                                                         self.canvas,
                                                         self.showlist,
+                                                       self.pp_dir,
                                                         self.pp_home,
                                                         self.pp_profile)
                 self.shower.play(self.show_id,self.end_shower,self.ready_callback,top=False,command='nil')
@@ -548,8 +596,10 @@ class LiveShow:
             self.display_message_callback=display_message_callback
             tp={'duration':duration,'message-colour':'white','message-font':'Helvetica 20 bold','message-justify':'left',
                 'background-colour':'','background-image':'','show-control-begin':'','show-control-end':'',
-                'animate-begin':'','animate-clear':'','animate-end':'','message-x':'','message-y':''}
-            self.player=MessagePlayer(self.show_id,canvas,tp,tp,self.pp_home,self.pp_profile)
+                'animate-begin':'','animate-clear':'','animate-end':'','message-x':'','message-y':'',
+                'display-show-background':'no','display-show-text':'no','show-text':'','track-text':'',
+                'plugin':''}
+            self.player=MessagePlayer(self.show_id,self.root,canvas,tp,tp,self.pp_dir,self.pp_home,self.pp_profile)
             self.player.play(content,self.showlist,self.display_message_end,None)
 
    

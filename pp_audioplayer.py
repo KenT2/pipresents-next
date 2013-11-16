@@ -8,6 +8,7 @@ import PIL.ImageTk
 import PIL.ImageEnhance
 
 from pp_mplayerdriver import mplayerDriver
+from pp_pluginmanager import PluginManager
 from pp_showmanager import ShowManager
 from pp_gpio import PPIO
 from pp_utils import Monitor
@@ -37,9 +38,11 @@ class AudioPlayer:
 
     def __init__(self,
                         show_id,
+                         root,
                         canvas,
                         show_params,
                         track_params,
+                         pp_dir,
                         pp_home,
                         pp_profile):
 
@@ -49,9 +52,11 @@ class AudioPlayer:
         
         #instantiate arguments
         self.show_id=show_id
+        self.root=root
         self.canvas = canvas
         self.show_params=show_params  
         self.track_params=track_params
+        self.pp_dir=pp_dir
         self.pp_home=pp_home
         self.pp_profile=pp_profile
 
@@ -64,10 +69,12 @@ class AudioPlayer:
                              
 
         # get background image from profile.
+        self.background_file=''
         if self.track_params['background-image']<>"":
             self.background_file= self.track_params['background-image']
         else:
-            self.background_file= self.show_params['background-image']
+            if self.track_params['display-show-background']=='yes':
+                self.background_file= self.show_params['background-image']
             
         # get background colour from profile.
         if self.track_params['background-colour']<>"":
@@ -106,6 +113,9 @@ class AudioPlayer:
         self.animate_begin_text=self.track_params['animate-begin']
         self.animate_end_text=self.track_params['animate-end']
 
+        # open the plugin Manager
+        self.pim=PluginManager(self.show_id,self.root,self.canvas,self.show_params,self.track_params,self.pp_dir,self.pp_home,self.pp_profile) 
+
 
         #create an instance of PPIO so we can create gpio events
         self.ppio = PPIO()
@@ -142,7 +152,7 @@ class AudioPlayer:
             self.ready_callback()
 
         # create an  instance of showmanager so we can control concurrent shows
-        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.canvas,self.pp_profile,self.pp_home)
+        self.show_manager=ShowManager(self.show_id,self.showlist,self.show_params,self.root,self.canvas,self.pp_dir,self.pp_profile,self.pp_home)
 
         
         # Control other shows at beginning
@@ -153,20 +163,24 @@ class AudioPlayer:
             self=None
         else:
             # display image and text
-            self.display_content()
-
-            # create animation events
-            reason,message=self.ppio.animate(self.animate_begin_text,id(self))
-            if reason=='error':
+            reason,message=self.display_content()
+            if reason == 'error':
                 self.mon.err(self,message)
                 self.end_callback(reason,message)
                 self=None
-            else:     
-                # start playing the track.
-                if self.duration_limit<>0:
-                    self.start_play_state_machine()
-                else:
-                    self.tick_timer=self.canvas.after(10, self.end_zero)
+            else:
+                # create animation events
+                reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                if reason=='error':
+                    self.mon.err(self,message)
+                    self.end_callback(reason,message)
+                    self=None
+                else:     
+                    # start playing the track.
+                    if self.duration_limit<>0:
+                        self.start_play_state_machine()
+                    else:
+                        self.tick_timer=self.canvas.after(10, self.end_zero)
 
     def end_zero(self):
         self.end('normal','zero duration')
@@ -350,6 +364,10 @@ class AudioPlayer:
 # *****************
 
     def end(self,reason,message):
+            # stop the plugin
+            if self.track_params['plugin']<>'':
+                self.pim.stop_plugin()
+
             # abort the timer
             if self.tick_timer<>None:
                 self.canvas.after_cancel(self.tick_timer)
@@ -413,20 +431,30 @@ class AudioPlayer:
                                               int(self.canvas['height'])/2,
                                               image=self.background,
                                               anchor=CENTER,
-                                                tag='pp-content')
+                                               tag='pp-content')
+
+        # execute the plugin if required
+        if self.track_params['plugin']<>'':
+
+            reason,message,self.track = self.pim.do_plugin(self.track,self.track_params['plugin'],)
+            if reason <> 'normal':
+                return reason,message
+
                 
         # display hint text if enabled
        
         if self.enable_menu== True:
-            self.canvas.create_text(int(self.canvas['width'])/2, int(self.canvas['height']) - int(self.show_params['hint-y']),
+            self.canvas.create_text(int(self.show_params['hint-x']),
+                                                    int(self.show_params['hint-y']),
                                                   text=self.show_params['hint-text'],
                                                   fill=self.show_params['hint-colour'],
                                                 font=self.show_params['hint-font'],
+                                                anchor=NW,
                                                 tag='pp-content')
 
             
         # display show text if enabled
-        if self.show_params['show-text']<> '':
+        if self.show_params['show-text']<> ''and self.track_params['display-show-text']=='yes':
             self.canvas.create_text(int(self.show_params['show-text-x']),int(self.show_params['show-text-y']),
                                                     anchor=NW,
                                                   text=self.show_params['show-text'],
@@ -448,6 +476,8 @@ class AudioPlayer:
         self.canvas.tag_raise('pp-click-area')
         
         self.canvas.update_idletasks( )
+
+        return 'normal',''
 
 
 # *****************
@@ -514,7 +544,7 @@ class Test:
         self.canvas=canvas
 
         #create an instance of PPIO and start polling
-        self.ppio= PPIO()	
+        self.ppio= PPIO()
         self.ppio.init(pp_dir,pp_home,self.canvas,50,self.callback)
         self.ppio.poll()
          
@@ -522,7 +552,7 @@ class Test:
 
     
     def callback(self,index,name,edge):
-        print name,  edge
+        print name,edge
         
     #key presses
 

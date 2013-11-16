@@ -15,7 +15,7 @@
    "disable-controls": "no", 
    "duration": "5", 
    "first-track-ref": "first", 
-   "image-window": "centred", 
+   "image-window": "original", 
    "links": "pp-key-1 play track1\npp-key-2 play track2", 
    "medialist": "page.json", 
    "mplayer-audio": "hdmi", 
@@ -24,7 +24,8 @@
    "omx-audio": "hdmi", 
    "omx-other-options": "", 
    "omx-volume": "0", 
-   "omx-window": "centred", 
+   "omx-window": "original", 
+   "show-canvas": "", 
    "show-ref": "radiobuttonshow", 
    "show-text": "", 
    "show-text-colour": "", 
@@ -34,7 +35,8 @@
    "timeout": "20", 
    "title": "Radiobuttonshow", 
    "transition": "cut", 
-   "type": "radiobuttonshow"
+   "type": "radiobuttonshow", 
+   "web-window": "warp"
   }
  ]
 }

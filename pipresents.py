@@ -51,6 +51,7 @@ class PiPresents:
 
         # get pi presents code directory
         pp_dir=sys.path[0]
+        self.pp_dir=pp_dir
         
         if not os.path.exists(pp_dir+"/pipresents.py"):
             tkMessageBox.showwarning("Pi Presents","Bad Application Directory")
@@ -173,6 +174,7 @@ class PiPresents:
 
         # set window dimensions and decorations
         if self.options['fullscreen']==True:
+
             self.root.attributes('-fullscreen', True)
             os.system('unclutter &')
             self.window_width=self.screen_width
@@ -180,7 +182,7 @@ class PiPresents:
             self.window_x=0
             self.window_y=0  
             self.root.geometry("%dx%d%+d%+d"  % (self.window_width,self.window_height,self.window_x,self.window_y))
-            # self.root.attributes('-zoomed','1')
+            self.root.attributes('-zoomed','1')
         else:
             self.window_width=int(self.screen_width*self.nonfull_window_width)
             self.window_height=int(self.screen_height*self.nonfull_window_height)
@@ -202,12 +204,15 @@ class PiPresents:
         #setup a canvas onto which will be drawn the images or text
         self.canvas = Canvas(self.root, bg='black')
 
-        self.canvas.config(height=self.canvas_height, width=self.canvas_width)
-        self.canvas.pack()
-        
-        # make sure focus is set on canvas.
+        self.canvas.config(height=self.canvas_height,
+                                       width=self.canvas_width,
+                                       highlightthickness=0)
+        # self.canvas.pack()
+        self.canvas.place(x=0,y=0)
+
         self.canvas.focus_set()
 
+                
 # ****************************************
 # INITIALISE THE INPUT DRIVERS
 # ****************************************
@@ -277,7 +282,7 @@ class PiPresents:
     def run_start_shows(self):
         #start show manager
         show_id=-1 #start show
-        self.show_manager=ShowManager(show_id,self.showlist,self.starter_show,self.canvas,self.pp_profile,self.pp_home)
+        self.show_manager=ShowManager(show_id,self.showlist,self.starter_show,self.root,self.canvas,self.pp_dir,self.pp_profile,self.pp_home)
         
         #first time through so empty show register and set callback to terminate Pi Presents if all shows have ended.
         self.show_manager.init(self.all_shows_ended_callback)

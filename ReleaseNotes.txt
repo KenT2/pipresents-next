@@ -1,3 +1,52 @@
+Version 1.2.3 17/11/2013
+
+uzbl needs to be installed -  sudo apt-get update sudo apt-get install uzbl
+
+There has been a change of profile since 1.2.2. However I have not changed the profile major version number since this is a beta. You must update the profiles by force; to do this run the editor with the --forceupdate command line option.
+
+To ease the updating task there is an editor menu option 'tools>update'  which will update all profiles in a pp_home.
+
+Play safe, keep backups!
+
+In addition the following will need to be changed:
+
+The format of Image Window has changed to allow 4 resizing options.
+You will need to edit the Image Window field of every show and any image tracks as follows:
+   centred > original
+   1 2 > original 1 2
+   1 2 3 4 > shrink 1234   You may prefer fit or warp to shrink (see manual)
+
+The format of Video Window (was OMX window) has changed to match Image Window and to allow 4 resizing options in future.
+You will need to edit the Video Window field in every show and any video tracks 
+   centred > original
+   1 2 > original 1 2
+   1 2 3 4 > warp 1 2 3 4
+
+The menushow parameters have changed significantly to accomodate the much enhanced menu displays.
+The best way to convert from an old menushow to the new is to delete the old show
+and replace it with a new one by doing show>new>menu in the editor. Details:
+  - Remember the Show Reference of the old menu and the file name of its Medialist.
+  - Delete the menu show but not its medialist
+  - Create a new menu and give it the same show reference as the old when it is being created.
+  - You may get a message saying the medialist already exists, just click OK
+  - Edit the Medialist field in the new menu to be the old medialist name.
+  - If the old menu and its medialist had different names you may now have an additional EMPTY medialst
+    with the name of the menu. You can delete it.
+You should then have a menu looking a bit like the old except it has bullets. Now read the menu to improve it.
+The pp_menu_1p2 example shows what can be achieved.
+The new menu has the menu background disabled by default.
+
+In Track Defaults in mediashows and menus and in the menu itself the Hint Text Y position
+is noo wrt to the top of the screen rather than the bottom. There is also a Hont Text x position.
+   
+There are new examples, additional media and the changes above made to the examples. Best to re-download  the [pipresents-next-examples].
+
+
+
+
+
+
+
 Version 1.2.2a (beta)
 
 There has been a change of profile since 1.2.1d. However I have not changed the profile major version number since this is a beta. You must update the profiles by force; to do this run the editor with the --forceupdate command line option.
