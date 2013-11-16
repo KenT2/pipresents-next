@@ -7,7 +7,6 @@ import PIL.Image
 import PIL.ImageTk
 import PIL.ImageEnhance
 
-from pp_menu_skin import Menu_Skin
 from pp_imageplayer import ImagePlayer
 from pp_medialist import MediaList
 from pp_videoplayer import VideoPlayer
