@@ -1,3 +1,10 @@
+Version 1.2.3b 28/11/2013
+bug correction release
+liveshow now works with -l option
+pp_menu_1p2 example profile updated. No need to download just run editor on it with --forceupdate then correct the xxx window errors
+manual updated to change warped to warp in the various Window fields
+
+
 Version 1.2.3 17/11/2013
 
 uzbl needs to be installed -  sudo apt-get update sudo apt-get install uzbl

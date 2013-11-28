@@ -1,3 +1,9 @@
+Version 1.2.3b 28/11/2013
+bug correction release:
+fixed - liveshow now works with -l option
+fixed - pp_menu_1p2 example profile updated
+fixed - manual updated to change warped to warp in the various Window fields
+
 1.2.3 16/11/2013
 
 new - browser player to play web tracks stored locally or on the internet

@@ -275,7 +275,7 @@ class LiveShow:
             for file in os.listdir(self.pp_live_dir2):
                 file = self.pp_live_dir2 + os.sep + file
                 (root_file,ext_file)= os.path.splitext(file)
-                if ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES+PPdefinitions._FILES or (ext_file.lower()=='.cfg'):
+                if ext_file.lower() in PPdefinitions.IMAGE_FILES+PPdefinitions.VIDEO_FILES+PPdefinitions.AUDIO_FILES+PPdefinitions.WEB_FILES or (ext_file.lower()=='.cfg'):
                     self.livelist_add_track(file)
                     
 
