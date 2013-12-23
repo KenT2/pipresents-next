@@ -52,7 +52,14 @@ See the licence.md file. Pi Presents is Careware to help support a small museum 
 Installation
 ============
 
-The full manual is in the file manual.pdf. To download Pi Presents including the manual and get going follow the instructions below.
+The full manual in English is here https://github.com/KenT2/pipresents-next/blob/master/manual.pdf
+
+There is a German version of the manual written by Peter Vasen ( http://www.web-echo.de/ ) you can download it here 
+
+http://www.weser-echo.de/pipresents_manual_1_2_3_de.pdf
+
+To download Pi Presents including the manual and get going follow the instructions below.
+
 
 Install required applications (MPlayer, PIL and X Server utils)
 ------------------------------------------------------
