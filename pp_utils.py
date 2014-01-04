@@ -57,6 +57,11 @@ class Monitor:
                                 caller.__class__.__name__ ,
                                 text
                                         )
+                                        
+    def warn(self,caller,text):
+        print "%.2f" % (time.time()-Monitor.start_time), " ERROR: ",caller.__class__.__name__," ", text
+        Monitor.ofile.write (" WARNING: " + caller.__class__.__name__ + ":  " + text + "\n")
+
 
     def log(self,caller,text):
         if Monitor.global_enable and self.enable:

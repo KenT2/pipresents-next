@@ -39,7 +39,7 @@ class VideoPlayer:
                         pp_profile):
 
         self.mon=Monitor()
-        self.mon.off()
+        self.mon.on()
         
         #instantiate arguments
         self.show_id=show_id
@@ -280,26 +280,42 @@ class VideoPlayer:
                 self.mon.log(self,"      Service stop required signal")
                 self.stop_omx()
                 self.quit_signal=False
-                self.play_state = VideoPlayer._ENDING
+                # self.play_state = VideoPlayer._ENDING
                 
             # omxplayer reports it is terminating so change to ending state
             if self.omx.end_play_signal:                    
                 self.mon.log(self,"            <end play signal received")
                 self.mon.log(self,"            <end detected at: " + str(self.omx.video_position))
+                if self.omx.end_play_reason<>'nice_day':
+                    # deal with omxplayer not sending 'have a nice day'
+                    self.mon.warn(self,"            <end detected at: " + str(self.omx.video_position))
+                    self.mon.warn(self,"            <pexpect reports: "+self.omx.end_play_reason)
+                    self.mon.warn(self,'pexpect.before  is'+self.omx.xbefore)
                 self.play_state = VideoPlayer._ENDING
+                self.ending_count=0
                 
             self.tick_timer=self.canvas.after(200, self.play_state_machine)
 
         elif self.play_state == VideoPlayer._ENDING:
             self.mon.log(self,"      State machine: " + self.play_state)
             # if spawned process has closed can change to closed state
-            # self.mon.log (self,"      State machine : is omx process running? -  "  + str(self.omx.is_running()))
+            self.mon.log (self,"      State machine : is omx process running? -  "  + str(self.omx.is_running()))
             if self.omx.is_running() ==False:
                 self.mon.log(self,"            <omx process is dead")
                 self.play_state = VideoPlayer._CLOSED
                 self.end('normal','quit by user or system')
             else:
-                self.tick_timer=self.canvas.after(200, self.play_state_machine)
+                self.ending_count+=1
+                if self.ending_count>10:
+                    # deal with omxplayer not terminating at the end of a track
+                    self.mon.warn(self,"            <omxplayer failed to close at: " + str(self.omx.video_position))
+                    self.mon.warn(self,'pexpect.before  is'+self.omx.xbefore)
+                    self.omx.kill()
+                    self.mon.warn(self,'omxplayer now  terminated ')
+                    self.play_state = VideoPlayer._CLOSED
+                    self.end('normal','end from omxplayer failed to terminate')
+                else:
+                    self.tick_timer=self.canvas.after(200, self.play_state_machine)
 
     def stop_omx(self):
         # send signal to stop the track to the state machine
@@ -480,17 +496,19 @@ class VideoPlayer:
 
 
 # *****************
-#Test harness follows
+#Test harness follows - THIS IS OUT OF DATE
 # *****************
 
 class Test:
     
     def __init__(self,track,show_params,track_params):
-        
+
         self.track=track
         self.show_params=show_params
         self.track_params = track_params
         self.break_from_loop=False
+
+        self.vp=None
     
         # create and instance of a Tkinter top level window and refer to it as 'my_window'
         my_window=Tk()
@@ -550,9 +568,9 @@ class Test:
         self.terminate()
     
     def play_event(self,event):
-        self.vp=VideoPlayer(self.canvas,self.show_params,self.track_params)
+        self.vp=VideoPlayer(1,my_window,self.canvas,self.show_params,self.track_params)
         self.vp.play(self.track,self.on_end,self.do_ready,False,self.do_starting,self.do_playing,self.do_finishing)
-    
+
     # toggles pause
     def pause_event(self,event):
         self.vp.key_pressed('p')
@@ -642,7 +660,7 @@ if __name__ == '__main__':
     Monitor.log_path=pp_dir
     Monitor.global_enable=True
 
-    track="/home/pi/pp_home/media/Suits-short.mkv"
+    track="/home/pi/pp_home/media/suits-short.mkv"
     
     #create a dictionary of options and call the test class
     show_params={'omx-other-options' : '',
@@ -650,7 +668,9 @@ if __name__ == '__main__':
                              'speaker' : 'left',
                              'animate-begin' : 'out1 on 1\nout1 off 20',
                              'animate-end' : '',
-                             'animate-clear': 'yes'
+                             'animate-clear': 'yes',
+                             'omx-volume':'0',
+                             'omx-window':'0 0 900 900'
                             }
 
     test=Test(track,show_params,show_params)

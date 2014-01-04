@@ -1,3 +1,7 @@
+Version 1.2.3c 4/1/2014
+workarounds for omxplayer occasionally not behaving properly at the end of a track.
+If you want just download pp_videoplayer.py pp_omxdriver.py and pp_utils.py
+
 Version 1.2.3b 28/11/2013
 bug correction release
 liveshow now works with -l option
