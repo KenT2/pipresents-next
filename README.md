@@ -116,7 +116,7 @@ There should now be a directory 'KenT2-pipresents-next-examples-xxxx' in your ho
 
 From the terminal window type:
 
-         python /home/pi/pipresents/pipresents.py -p pp_mediashow
+         python /home/pi/pipresents/pipresents.py -p pp_mediashow_1p2
 		 
 to see a repeating multimedia show.
 
