@@ -2,6 +2,7 @@ import os
 import pexpect
 import re
 import sys
+import signal
 
 from threading import Thread
 from time import sleep
