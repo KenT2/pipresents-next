@@ -1,6 +1,5 @@
-Version 1.2.3c 4/1/2014
-workarounds for omxplayer occasionally not behaving properly at the end of a track.
-If you want just download pp_videoplayer.py pp_omxdriver.py and pp_utils.py
+Version 1.2.3d 22/6/2014
+If you want an expmple of the repeat command in a hyperlinkshow download pp_hyperlinkshow_1p2 example profile
 
 Version 1.2.3b 28/11/2013
 bug correction release

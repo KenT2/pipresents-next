@@ -3,7 +3,7 @@
 """
 Part of Pi Presents
 Pi Presents is a presentation package, running on the Raspberry Pi, for museum exhibits, galleries, and presentations.
-Copyright 2012/2013, Ken Thompson
+Copyright 2012/2013,2014 Ken Thompson
 
 See manual.pdf for instructions.
 """
@@ -36,7 +36,8 @@ class PiPresents:
     def __init__(self):
         
         self.pipresents_issue="1.2"
-        self.nonfull_window_width = 0.6 # proportion of width
+        self.pipresents_minorissue = '1.2.3d'
+        self.nonfull_window_width = 0.5 # proportion of width
         self.nonfull_window_height= 0.6 # proportion of height
         self.nonfull_window_x = 0 # position of top left corner
         self.nonfull_window_y=0   # position of top left corner
@@ -62,13 +63,20 @@ class PiPresents:
         Monitor.log_path=pp_dir
         self.mon=Monitor()
         self.mon.on()
+        # 0  - errors only
+        # 1  - errors and warnings
+        # 2  - everything
         if self.options['debug']==True:
-            Monitor.global_enable=True
+            Monitor.global_enable=2
         else:
-            Monitor.global_enable=False
- 
-        self.mon.log (self, "Pi Presents is starting")
-        self.mon.log (self," OS and separator:" + os.name +'  ' + os.sep)
+            Monitor.global_enable=0
+            
+        # UNCOMMENT THIS TO LOG WARNINGS AND ERRORS ONLY
+        # Monitor.global_enable=1
+
+        self.mon.log (self, "\n\n\n\n\n*****************\nPi Presents is starting, Version:"+self.pipresents_minorissue)
+        self.mon.log (self, "Version: " + self.pipresents_minorissue)
+	self.mon.log (self," OS and separator:" + os.name +'  ' + os.sep)
         self.mon.log(self,"sys.path[0] -  location of code: "+sys.path[0])
         # self.mon.log(self,"os.getenv('HOME') -  user home directory (not used): " + os.getenv('HOME'))
         # self.mon.log(self,"os.path.expanduser('~') -  user home directory: " + os.path.expanduser('~'))

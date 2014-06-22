@@ -7,9 +7,6 @@ class PathManager:
 
     def __init__(self):
         self.debug=False
-
-        # remove the # to enable display of the path operations and stack in the terminal window.
-        #self.debug=True
         
         self.path_stack=[]
 
@@ -63,6 +60,8 @@ class PathManager:
         self.path_stack.append([page])
         if self.debug: self.print_path()
 
+    def empty(self):
+        self.path_stack=[]
 
     # sibling - just pop the media track so sibling is appended and can go back to page track
     def pop_for_sibling(self):
@@ -75,7 +74,6 @@ class PathManager:
         print 'Path now is:'
         for page in self.path_stack:
             print "      ",page[0]
-        print ''
 
 # *******************   
 # Extract links
@@ -103,7 +101,7 @@ class PathManager:
                 return "incorrect number of fields in link",['','','']
             symbol=fields[0]
             operation=fields[1]
-            if operation not in ('return','home','call','null','exit','goto','play','jump'):
+            if operation not in ('return','home','call','null','exit','goto','play','jump','repeat'):
                 return "unknown operation",['','','']
             if len(fields)==3:
                 arg=fields[2]
@@ -123,7 +121,7 @@ class PathManager:
             # new link so append it
                 current_links.append(track_link)
         #print "\n merging"
-        #print self.links
+        #print current_links
                         
     
 

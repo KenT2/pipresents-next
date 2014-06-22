@@ -1,3 +1,18 @@
+Version 1.2.3d 22/6/2014
+Removed output of Warnings when debug is disabled (no -d), modify pipresents.py line 75 ish if you wish to see warnings
+Now reports minor version e.g. 1.2.3d in debug output.
+hyperlinkshow - Improvements and bug fixes
+Use updated example for demonstration
+ - new repeat command to allow video and audio tracks to repeat
+ - fixed goto so that it forgets the path
+ - improved debugging trace. Now enabled from pp_hyperlinkshow.py
+ 
+Radiobuttonshow - bug fixes
+ - removed code that merged links from the first track, all links should be in the show.
+
+omxdriver.py - replace kill with SIGINT so so it has a chance to tidy up daemons and omxplayer.bin
+Improvements to manual
+
 Version 1.2.3c 4/1/2104
 hopefully fixed unreliable video playing
 additional checks in pp_omxdriver.py and pp_videoplayer.py for the incorrect termination of omxplayer

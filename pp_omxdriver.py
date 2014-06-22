@@ -97,11 +97,12 @@ class OMXDriver(object):
     def is_running(self):
         return self._process.isalive()
     
-     # kill of omxplayer when it hasn't terminated at the end of a track.
+
+    # kill off omxplayer when it hasn't terminated at the end of a track.
+    # send SIGINT (CTRL C) so it has a chance to tidy up daemons and omxplayer.bin
     def kill(self):
-        killed = self._process.terminate(force=True)
-        os.system('killall omxplayer.bin')
-        return killed
+        self._process.kill(signal.SIGINT)
+
 
 # ***********************************
 # INTERNAL FUNCTIONS

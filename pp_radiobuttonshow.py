@@ -20,13 +20,12 @@ from pp_utils import Monitor
 
 class RadioButtonShow:
     """
-        starts at 'first-track' which can be any type of track
-        first-track has links of the form symbolic-name play track-ref
+        starts at 'first-track' which can be any type of track or a show
+        The show has links of the form symbolic-name play track-ref
         key, gpio or click area will play the referenced track
-        at the end of that track control will return to launch track
-        links in any but first-track are ignored. Links are inherited from first-track
-        pressing a key or gpio (?? click area) during a track will start another track
-        timeout returns to launch track
+        at the end of that track control will return to first-track
+        links in the tracks are ignored. Links are inherited from the show.
+        timeout returns to first-track
 
         interface:
          * play - selects the first track to play (first-track) 
@@ -225,14 +224,14 @@ class RadioButtonShow:
     def is_link(self,symbol,edge,source):
         # we have links which locally define symbolic names to be converted to radiobuttonshow operations
         # find the first entry in links that matches the symbol and execute its operation
-        print 'radiobuttonshow ',symbol
+        #print 'radiobuttonshow ',symbol
         found=False
         for link in self.links:
             #print link
             if symbol==link[0]:
                 found=True
                 if link[1]<>'null':
-                    print 'match',link[0]
+                    #print 'match',link[0]
                     link_operation=link[1]
                     if link_operation=='play':
                         self.do_play(link[2],edge,source)
@@ -325,12 +324,13 @@ class RadioButtonShow:
         # called from a Player when ready to play, if first-track merge the links from the track with those from the show
         self.delete_eggtimer()
         if self.current_track_ref==self.first_track_ref:
-            links_text=self.player.get_links()
-            reason,message,track_links=self.path.parse_links(links_text)
-            if reason=='error':
-                self.mon.err(self,message + " in page")
-                self.end('error',message)
-            self.path.merge_links(self.links,track_links)
+            #links_text=self.player.get_links()
+            #reason,message,track_links=self.path.parse_links(links_text)
+            #if reason=='error':
+                #self.mon.err(self,message + " in page")
+                #self.end('error',message)
+            #self.path.merge_links(self.links,track_links)
+            pass
 
            
     def play_selected_track(self,selected_track):
@@ -343,7 +343,7 @@ class RadioButtonShow:
             self.canvas.after_cancel(self.timeout_running)
             self.timeout_running=None
             
-        self.display_eggtimer(self.resource('menushow','m01'))
+        # self.display_eggtimer(self.resource('radiobuttonshow','m01'))
 
         self.current_track_type = selected_track['type']
         
@@ -492,7 +492,7 @@ class RadioButtonShow:
         if reason in("killed","error"):
             self.end(reason,message)
         else:
-            self.display_eggtimer(self.resource('radiobuttonshow','m02'))
+            #self.display_eggtimer(self.resource('radiobuttonshow','m02'))
             self.what_next()
 
     # callback from when shower ends
@@ -504,7 +504,7 @@ class RadioButtonShow:
         if reason in ("killed","error"):
             self.end(reason,message)
         else:
-            self.display_eggtimer(self.resource('radiobuttonshow','m03'))
+            #self.display_eggtimer(self.resource('radiobuttonshow','m03'))
             self.what_next()  
 
 

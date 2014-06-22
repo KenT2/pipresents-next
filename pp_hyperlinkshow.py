@@ -22,10 +22,21 @@ class HyperlinkShow:
     """
         Aimed at touchscreens but can be used for any purpose where the user is required to follow hyperlinks between tracks
         Profiles for media tracks (message, image, video, audio ) specify links to other tracks
-        in a link a symbolic name of an input is associated with a track-reference
-        The show begins at first-track and then uses events (GPIO, keypresses etc.) to link to other tracks via their symbolic names
-        If using 'call' keeps a record of the tracks it has visited so the 'return' command can go back.
-        Executes timeout-track if no user input is received.
+        In a link a symbolic name of an input is associated with a track-reference
+        The show begins at a special track specified in the profiile called the First Track and moves to other tracks
+         - when a link is executed by a input event with a specified symbolic name
+        -  at the natural end of the track using the special pp-onend symbolic name
+        If using the 'call' link command PP keeps a record of the tracks it has visited so the 'return' command can go back.
+        Executes timeout-track if no user input is received (includes pp-onend but not repeat)
+
+        There is a another special track with Home Track. The home command returns here and the 'return n' command will not go back past here.
+        This was designed to allow the timeout to go back to First Track which would advertise the show.
+        Once the user had been enticed and clicked a link to move to Home pressing home or return would not return him to First Track
+
+        You can make the Home Track and the First Track the same track if you want.
+        You may want a track, if it is a video or audio track, to repeat. You can use repeat for this and it will not cancel the timeout.
+        
+        Image and message tracks can have a zero duration so they never end naturally so repeat is not required.
 
         links are of the form:
            symbolic-name command [track-ref]
@@ -36,8 +47,9 @@ class HyperlinkShow:
           return n - return n tracks back up the path removing the track from the path, stops at home-track.
           return <track-ref> return to <track-ref> removing tracks from the path
           home  - return to home-track removing tracks from the path
-          jump <track-ref-> - play trck-ref forgetting the path back to home-track
-          goto <track-ref> - play track-ref, forget the path 
+          jump <track-ref-> - play track-ref forgetting the path back to home-track
+          goto <track-ref> - play track-ref, forget the path
+          repeat - repeat the track
           exit - end the hyperlink show
           null - inhibits the link defined in the show with the same symbolic name.
 
@@ -71,6 +83,10 @@ class HyperlinkShow:
         
         self.mon=Monitor()
         self.mon.on()
+
+        self.debug=False
+        # remove # to enable debugging trace
+        #self.debug=True
         
         #instantiate arguments
         self.show_params=show_params
@@ -250,6 +266,8 @@ class HyperlinkShow:
                         self.do_goto(link[2],edge,source)
                     elif link_operation =='jump':
                         self.do_jump(link[2],edge,source)
+                    elif link_operation == 'repeat':
+                        self.do_repeat(edge,source)
                     elif link_operation=='exit':
                         self.end('normal','executed exit command')
         return found
@@ -271,7 +289,9 @@ class HyperlinkShow:
 
 
     def timeout_callback(self):
-        self.do_call(self.timeout_track_ref,'front','timeout')
+        if self.debug:
+            print '\nTimeout Event - goto',self.timeout_track_ref
+        self.do_goto(self.timeout_track_ref,'front','timeout')
 
     def do_call(self,track_ref,edge,source):
         if track_ref<>self.current_track_ref:
@@ -288,7 +308,7 @@ class HyperlinkShow:
 
 
     def do_goto(self,to,edge,source):
-        if to<>self.current_track_ref:
+        #if to<>self.current_track_ref:
             self.mon.log(self,'goto: '+to)
             self.next_track_signal=True
             self.next_track_op='goto'
@@ -301,7 +321,7 @@ class HyperlinkShow:
                 self.what_next()
 
     def do_jump(self,to,edge,source):
-        if to<>self.current_track_ref:
+        #if to<>self.current_track_ref:
             self.mon.log(self,'jump to: '+to)
             self.next_track_signal=True
             self.next_track_op='jump'
@@ -312,7 +332,18 @@ class HyperlinkShow:
                 self.player.input_pressed('stop')
             else:
                 self.what_next()
-        
+
+    def do_repeat(self,edge,source):
+            self.mon.log(self,'repeat: ')
+            self.next_track_signal=True
+            self.next_track_op='repeat'
+            if self.shower<>None:
+                self.shower.input_pressed('stop',edge,source)
+            elif self.player<>None:
+                self.player.input_pressed('stop')
+            else:
+                self.what_next()
+                
     def do_return(self,to,edge,source):
         self.next_track_signal=True
         if to.isdigit() or to=='':
@@ -334,7 +365,7 @@ class HyperlinkShow:
             self.what_next()
         
     def do_home(self,edge,source):
-        if self.current_track_ref<>self.home_track_ref:
+        # if self.current_track_ref<>self.home_track_ref:
             self.mon.log(self,'hyperlink command - home')
             self.next_track_signal=True
             self.next_track_op='home'
@@ -353,6 +384,10 @@ class HyperlinkShow:
             first_track=self.medialist.track(index)
             self.current_track_ref=first_track['track-ref']
             self.path.append(first_track['track-ref'])
+            self.continue_timeout=False
+            if self.debug:
+                    print '\nFirst Track',first_track['track-ref']
+                    self.path.print_path()
             self.play_selected_track(first_track)
         else:
             self.mon.err(self,"first-track not found in medialist: "+ self.show_params['first-track-ref'])
@@ -362,6 +397,7 @@ class HyperlinkShow:
 
     
     def what_next(self):
+
         # user wants to end the show 
         if self.end_hyperlinkshow_signal==True:
             self.end_hyperlinkshow_signal=False
@@ -370,6 +406,7 @@ class HyperlinkShow:
         # user has selected another track
         elif self.next_track_signal==True:
                 self.next_track_signal=False
+                self.continue_timeout=False
 
                 # home
                 if self.next_track_op in ('home'):
@@ -381,6 +418,9 @@ class HyperlinkShow:
                     # play home
                     self.next_track_ref=self.home_track_ref
                     self.path.append(self.next_track_ref)
+                    if self.debug:
+                        print '\nExecuted Home'
+                        self.path.print_path()
 
                 # return-by
                 elif self.next_track_op in ('return-by'):
@@ -391,6 +431,22 @@ class HyperlinkShow:
                         # use returned track
                         self.next_track_ref=back_ref
                         self.path.append(self.next_track_ref)
+                        if self.debug:
+                            print '\nExecuted Return',self.next_track_arg
+                            self.path.print_path()
+
+                # repeat is return by 1
+                elif self.next_track_op in ('repeat'):
+                        #print 'current', self.current_track_ref
+                        #print 'home', self.home_track_ref
+                   #if self.current_track_ref<>self.home_track_ref:
+                        self.path.pop_for_sibling()
+                        self.next_track_ref=self.current_track_ref
+                        self.path.append(self.current_track_ref)
+                        self.continue_timeout=True
+                        if self.debug:
+                            print '\nExecuted Repeat'
+                            self.path.print_path()
 
                 # return-to
                 elif self.next_track_op in ('return-to'):
@@ -402,24 +458,28 @@ class HyperlinkShow:
                     # and append the return to track
                     self.next_track_ref=self.next_track_arg
                     self.path.append(self.next_track_ref)
+                    if self.debug:
+                        print '\nExecuted Return',self.next_track_arg
+                        self.path.print_path()
                     
                 # call
                 elif self.next_track_op in ('call'):
                     # append the required track
                     self.path.append(self.next_track_arg)
                     self.next_track_ref=self.next_track_arg
+                    if self.debug:
+                        print '\nExecuted Call',self.next_track_arg
+                        self.path.print_path()
 
                 # goto
                 elif self.next_track_op in ('goto'):
-                    self.path.pop_for_sibling()
-##                    #back to first track and remove it
-##                    back_ref=self.path.back_to(self.first_track_ref)
-##                    if back_ref=='':
-##                        self.mon.err(self,"goto - first track not in path: "+self.first_track_ref)
-##                        self.end('error',"goto - first track not in path")
-                   #add the goto track
+                    self.path.empty()
+                    #add the goto track
                     self.next_track_ref=self.next_track_arg
                     self.path.append(self.next_track_arg)
+                    if self.debug:
+                        print '\nExecuted Goto',self.next_track_arg
+                        self.path.print_path()
 
                 # jump
                 elif self.next_track_op in ('jump'):
@@ -433,6 +493,9 @@ class HyperlinkShow:
                     # append the jumped to track
                     self.next_track_ref=self.next_track_arg
                     self.path.append(self.next_track_ref)
+                    if self.debug:
+                        print '\nExecuted Jump',self.next_track_arg
+                        self.path.print_path()
 
                 else:
                     self.mon.err(self,"unaddressed what next: "+ self.next_track_op+ ' '+self.next_track_arg)
@@ -451,6 +514,8 @@ class HyperlinkShow:
         else:
             #track ends naturally
             #then input pp-onend symbolic name
+            if self.debug:
+                print '\nCreated pp-onend event'
             self.input_pressed('pp-onend','front','key')
         
 
@@ -492,7 +557,7 @@ class HyperlinkShow:
               selected track is a dictionary for the track/show
         """     
 
-        if self.timeout_running<>None:
+        if self.timeout_running<>None and self.continue_timeout==False:
             self.canvas.after_cancel(self.timeout_running)
             self.timeout_running=None
             
@@ -510,7 +575,7 @@ class HyperlinkShow:
 
         #start timeout for the track if required           
              
-        if self.current_track_ref<>self.first_track_ref and int(self.show_params['timeout'])<>0:
+        if self.continue_timeout==False and self.current_track_ref<>self.first_track_ref and int(self.show_params['timeout'])<>0:
             self.timeout_running=self.canvas.after(int(self.show_params['timeout'])*1000,self.timeout_callback)
         
 

@@ -30,7 +30,11 @@ class StopWatch:
 
 
 class Monitor:
-    global_enable=False 
+    # 0  - errors only
+    # 1  - errors and warnings
+    # 2  - everything
+    
+    global_enable=0
     log_path=""
     ofile=None
     start_time= time.time()
@@ -59,12 +63,13 @@ class Monitor:
                                         )
                                         
     def warn(self,caller,text):
-        print "%.2f" % (time.time()-Monitor.start_time), " ERROR: ",caller.__class__.__name__," ", text
-        Monitor.ofile.write (" WARNING: " + caller.__class__.__name__ + ":  " + text + "\n")
+        if Monitor.global_enable >0 and self.enable:
+            print "%.2f" % (time.time()-Monitor.start_time), " WARNING: ",caller.__class__.__name__," ", text
+            Monitor.ofile.write (" WARNING: " + caller.__class__.__name__ + ":  " + text + "\n")
 
 
     def log(self,caller,text):
-        if Monitor.global_enable and self.enable:
+        if Monitor.global_enable >1  and self.enable:
              print "%.2f" % (time.time()-Monitor.start_time), " ",caller.__class__.__name__," ", text
              Monitor.ofile.write (str(time.time()-Monitor.start_time) + " " + caller.__class__.__name__ +": " + text+"\n")
              
