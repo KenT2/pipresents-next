@@ -1,3 +1,6 @@
+Version 1.2.3e 11/8/2014
+Fixed bug in videoplayer where animation commands at the end of the track were those specified for the beginning of the track
+
 Version 1.2.3d 22/6/2014
 Removed output of Warnings when debug is disabled (no -d), modify pipresents.py line 75 ish if you wish to see warnings
 Now reports minor version e.g. 1.2.3d in debug output.

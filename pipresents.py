@@ -36,7 +36,7 @@ class PiPresents:
     def __init__(self):
         
         self.pipresents_issue="1.2"
-        self.pipresents_minorissue = '1.2.3d'
+        self.pipresents_minorissue = '1.2.3e'
         self.nonfull_window_width = 0.5 # proportion of width
         self.nonfull_window_height= 0.6 # proportion of height
         self.nonfull_window_x = 0 # position of top left corner

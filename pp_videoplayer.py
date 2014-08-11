@@ -365,7 +365,7 @@ class VideoPlayer:
                         self.ppio.clear_events_list(id(self))
                     
                     # create animation events for ending
-                    reason,message=self.ppio.animate(self.animate_begin_text,id(self))
+                    reason,message=self.ppio.animate(self.animate_end_text,id(self))
                     if reason=='error':
                         self.mon.err(self,message)
                         self.end_callback(reason,message)
