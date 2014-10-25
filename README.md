@@ -1,3 +1,5 @@
+Diese Readme-Datei hat Peter Vasen ins Deutsche übersetzt. Klicken Sie hier http://www.weser-echo.de/BitteLesen.pdf
+
 PI PRESENTS  - Version 1.2.3
 ============================
 
