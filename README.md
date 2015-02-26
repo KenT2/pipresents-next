@@ -3,22 +3,13 @@ Diese Readme-Datei hat Peter Vasen ins Deutsche übersetzt. Klicken Sie hier http
 PI PRESENTS  - Version 1.2.3
 ============================
 
-This repository contains Beta Test software for the next version of Pi Presents. If you are unhappy with bleeding edge software then use the main Pi Presents repository and upgrade later.
+This repository contains the current stable version of Pi Presents. The version will not be developed except for bug fixes.
 
 
-FOR BETA TESTERS
-================
-Thank you for  helping me improve Pi Presents.
+TO UPGRADE FROM VERSION 1.1
+============================
+To upgrade follow the instructions in the 'Updating Pi Presents' section below. Before doing so keep a copy of the current Pi Presents and all the profiles:
 
-Ensure you read the Release Notes in ReleaseNotes.txt. Improvements from Version 1.2.2 and earlier versions are in changelog.txt
-
-I have made this next minor version of Pi Presents a Beta as it is such a major upgrade from the previous beta. The main aim of the beta is to obtain feedback on the usability of the improvements and to iron out the, hopefully, few bugs left.
-
-To upgrade follow the instructions in the 'Updating Pi Presents' section below. Before doing so keep a copy of the current Pi Presents:
-
-* As instructed in the instructions rename your pipresents directory to old-pipresents
-
-* Also copy your pp_home to another directory. Part of the upgrade process will be to update all these profiles to from Version 1.2.2 to Version 1.2.3 . This being a change of minor version number update will need to be forced.
 
 PI PRESENTS
 ===========
@@ -49,7 +40,7 @@ There are potentially many applications of Pi Presents and your input on real wo
 Licence
 =======
 
-See the licence.md file. Pi Presents is Careware to help support a small museum charity of which I am a Trustee and who are busy building themselves a larger premises https://www.facebook.com/MuseumOfTechnologyTheGreatWarWw11. Particularly if you are using Pi Presents in a profit making situation a donation would be appreciated.
+See the licence.md file. Pi Presents is Careware to help support a small museum charity of which I am a Trustee and who are busy building themselves a larger premises http://www.museumoftechnology.org.uk  Particularly if you are using Pi Presents in a profit making situation a donation would be appreciated.
 
 Installation
 ============
@@ -92,7 +83,7 @@ Return the terminal window to the home directory.
 Download Pi Presents
 --------------------
 
-Pi Presents MUST be run from the LXDE desktop. From a terminal window open in your home directory type:
+Pi Presents MUST use Raspbian and be run from the desktop (startx). From a terminal window open in your home directory type:
 
          wget https://github.com/KenT2/pipresents-next/tarball/master -O - | tar xz
 
@@ -125,8 +116,8 @@ to see a repeating multimedia show.
 Now read the manual to try other examples.
 
 
-Updating Pi Presents
-=====================
+Updating Pi Presents from Version 1.1
+======================================
 
 Open a terminal window in your home directory and type:
 
@@ -146,7 +137,7 @@ Getting examples for this version.
 
 New to this version is a github repository [pipresents-next-examples]
 
-Rename the existing pp_home directory to old-pp_home.
+Rename the existing pp_home directory to old_pp_home.
 
 Open a terminal window in your home directory and type:
 
@@ -156,20 +147,18 @@ There should now be a directory 'KenT2-pipresents-next-examples-xxxx' in your ho
 
 Open the directory and move the 'pp_home' directory and its contents to your home directory.
 
-These examples are compatible with the version of  Pi Presents you have just downloaded. In addition you can update profiles from version 1.1.x [pipresents]  to 1.2.3 by simply opening them in the editor. However if you are a beta tester you will need to force updating of the profiles  from Version 1.2.2 to Version 1.2.3 by running the editor with --forceupdate:
-
-      python pp_editor.py --forceupdate
+These examples are compatible with the version of  Pi Presents you have just downloaded. In addition you can update profiles from version 1.1.x [pipresents] to 1.2.3 by simply opening them in the editor (make a backup copy first):
 	  
 In either case you can use the tools>update all menu option to update all profiles in /pp_home
 
-Lastly you will need to do a little manual updating of some of the field values as specified in  ReleaseNotes.txt
+Lastly you will need to do a little manual updating of some of the field values as specified in  ReleaseNotes.txt. Start at the paragraph in releasenotes.txt that introduces version 1.2 and work backwards.
 
-I have started a new thread on the forum for the beta test, see below.
+I have started a new thread on the forum for [pipresents-next], see below.
 
 		 
 Requirements
 ============
-Pi Presents was developed on Raspbian using Python 2.7. It will run on a Rev.1 or Rev.2 Pi. On 256MB machines display of large images (.jpg etc.) will run out of RAM and crash the Pi.
+Pi Presents was developed on Raspbian using Python 2.7. It will run on a Rev.1 on all versions of Pi including Pi2. On 256MB machines display of large images (.jpg etc.) will run out of RAM and crash the Pi.
 
 I don't know the exact maximum but keep images in the 1 Megapixel range. Larger images, greater than the screen pixel size, will do nothing to improve the picture and will take longer to display even on 512MB machines.
 
@@ -178,7 +167,7 @@ omxplayer plays some videos using 64MB of RAM; others need 128MB, especially if 
 
 Bug Reports and Feature Requests
 ================================
-I am keen to develop Pi Presents further and would welcome bug reports and ideas for real world additional features and uses. 
+I am keen to develop Pi Presents further and would welcome bug reports and ideas for real world additional features and uses. [pipresents-gapless] will be in beta test soon.
 
 Please use the Issues tab on Github https://github.com/KenT2/pipresents-next/issues or the Pi Presents thread  http://www.raspberrypi.org/phpBB3/viewtopic.php?f=38&t=39985 on the Raspberry Pi forum.
 
