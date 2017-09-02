@@ -58,6 +58,7 @@ Install required applications (MPlayer, PIL and X Server utils)
 ------------------------------------------------------
 
          sudo apt-get update
+         sudo apt-get install pexpect
          sudo apt-get install python-imaging
          sudo apt-get install python-imaging-tk
          sudo apt-get install x11-xserver-utils
@@ -66,19 +67,6 @@ Install required applications (MPlayer, PIL and X Server utils)
 		 sudo apt-get install uzbl
 
 	   
-Download and install pexpect
------------------------------
-
-Specified here http://www.noah.org/wiki/pexpect#Download_and_Installation and below.
-
-From a terminal window open in your home directory type:
-
-         wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
-         tar xzf pexpect-2.3.tar.gz
-         cd pexpect-2.3
-         sudo python ./setup.py install
-
-Return the terminal window to the home directory.
 	   
 Download Pi Presents
 --------------------
