@@ -58,7 +58,7 @@ Install required applications (MPlayer, PIL and X Server utils)
 ------------------------------------------------------
 
          sudo apt-get update
-         sudo apt-get install pexpect
+         sudo apt-get install python-pexpect
          sudo apt-get install python-imaging
          sudo apt-get install python-imaging-tk
          sudo apt-get install x11-xserver-utils
