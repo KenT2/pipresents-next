@@ -1,3 +1,6 @@
+Version 1.2.3f 17/1/2018
+fixed shutting down the Pi to nake it compatible with Jessie and Stretch
+
 Version 1.2.3e 11/8/2014
 Fixed bug in videoplayer where animation commands at the end of the track were those specified for the beginning of the track
 

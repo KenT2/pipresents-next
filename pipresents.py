@@ -3,7 +3,7 @@
 """
 Part of Pi Presents
 Pi Presents is a presentation package, running on the Raspberry Pi, for museum exhibits, galleries, and presentations.
-Copyright 2012/2013,2014 Ken Thompson
+Copyright 2012,2013,2014,2015,2016,217,2018 Ken Thompson
 
 See manual.pdf for instructions.
 """
@@ -36,7 +36,7 @@ class PiPresents:
     def __init__(self):
         
         self.pipresents_issue="1.2"
-        self.pipresents_minorissue = '1.2.3e'
+        self.pipresents_minorissue = '1.2.3f'
         self.nonfull_window_width = 0.5 # proportion of width
         self.nonfull_window_height= 0.6 # proportion of height
         self.nonfull_window_x = 0 # position of top left corner
@@ -391,7 +391,8 @@ class PiPresents:
             #close logging files 
             self.mon.finish()
             if self.shutdown_required==True:
-                call(['sudo', 'shutdown', '-h', '-t 5','now'])
+                # call(['sudo', 'shutdown', '-h', '-t 5','now'])
+                call(['sudo', 'shutdown', '-h', 'now'])
                 exit()
             else:
                 exit()
