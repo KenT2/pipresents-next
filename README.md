@@ -3,7 +3,13 @@ Diese Readme-Datei hat Peter Vasen ins Deutsche übersetzt. Klicken Sie hier http
 PI PRESENTS  - Version 1.2.3
 ============================
 
-This repository contains the current stable version of Pi Presents. The version will not be developed except for bug fixes.
+This repository contains the previous version of Pi Presents. This version will be supported until June 2019.
+
+Please use Pi Presents Gapless which is the current stable version.
+
+Upgrade instructions are in the Pi Presents Gapless repsitory in the file upgrade_1p2_1p3.txt
+
+
 
 
 TO UPGRADE FROM VERSION 1.1
